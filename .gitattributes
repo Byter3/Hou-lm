@@ -1,0 +1,4 @@
+# These files run inside Linux containers even when checked out on Windows.
+gateway/*.sh text eol=lf
+gateway/bin/* text eol=lf
+gateway/Dockerfile text eol=lf

@@ -1,0 +1,15 @@
+# Only the gateway compatibility adapter and its offline checks enter the build.
+**
+!gateway/
+!gateway/Dockerfile
+!gateway/litellm_stream_compat.py
+!gateway/check_entrypoint.py
+!gateway/bin/
+!gateway/bin/litellm
+!tests/
+!tests/test_litellm_stream_compat.py
+!tests/test_litellm_stream_probe.py
+!tests/test_gateway_bootstrap.py
+!tests/test_gateway_entrypoint.py
+!scripts/
+!scripts/diagnose_litellm_stream.py

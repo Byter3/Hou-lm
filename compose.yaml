@@ -1,0 +1,74 @@
+version: "3.8"
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  litellm-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: "${LITELLM_DB_PASSWORD:?Set LITELLM_DB_PASSWORD in Portainer}"
+    volumes:
+      - litellm_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  litellm:
+    image: docker.litellm.ai/berriai/litellm:main-stable
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:?Set LITELLM_MASTER_KEY in Portainer}"
+      LITELLM_SALT_KEY: "${LITELLM_SALT_KEY:?Set LITELLM_SALT_KEY in Portainer}"
+      DATABASE_URL: "postgresql://litellm:${LITELLM_DB_PASSWORD:?Set LITELLM_DB_PASSWORD in Portainer}@litellm-db:5432/litellm"
+      STORE_MODEL_IN_DB: "True"
+      CHATGPT_TOKEN_DIR: "/var/lib/litellm/chatgpt"
+    volumes:
+      - litellm_chatgpt_data:/var/lib/litellm/chatgpt
+    depends_on:
+      litellm-db:
+        condition: service_healthy
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "8088:8080"
+    environment:
+      ENABLE_OLLAMA_API: "false"
+      # Correct endpoint when native Ollama administration is enabled in the UI.
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      ENABLE_OPENAI_API: "true"
+      ENABLE_DIRECT_CONNECTIONS: "false"
+      OPENAI_API_BASE_URL: "http://litellm:4000/v1"
+      # Set a restricted LiteLLM virtual key in the UI after deployment.
+      OPENAI_API_KEY: ""
+    volumes:
+      - open-webui-data:/app/backend/data
+    depends_on:
+      - litellm
+
+volumes:
+  ollama_data:
+  open-webui-data:
+  litellm_db_data:
+  litellm_chatgpt_data:

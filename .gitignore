@@ -1,0 +1,56 @@
+# Real environment files; retain the empty, documented template.
+.env
+.env.*
+!.env.example
+
+# Local secrets and runtime data.
+secrets/
+auth.json
+chatgpt-auth/
+data/
+backups/
+screenshots/
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.test-artifacts/
+dist/
+
+# Local Python environments, build output and coverage.
+.venv/
+venv/
+env/
+build/
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Credential exports and local database files.
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+
+# Houdini scenes and local scene backups.
+.houlm/
+*.hip
+*.hiplc
+*.hipnc
+*.hip~
+*.hiplc~
+*.hipnc~
+*.hip.json
+*.hiplc.json
+*.hipnc.json
+
+# Editor and OS files.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
