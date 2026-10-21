@@ -2,9 +2,15 @@
 
 Hou-lm is a native, dockable assistant for an artist's open Houdini session. It uses your Open WebUI account and centrally configured models to inspect the scene, explain it, and perform requested changes. The supported target is **Windows, Houdini 20.5.445, Python 3.11 and bundled PySide2**. Other Houdini builds and platforms are not yet validated.
 
-You need a local copy of this repository, a reachable Open WebUI server, and an Open WebUI user API key with access to a model that supports tool calls. No local model installation or additional workstation service is required. See [connection and deployment requirements](houdini-connection.md) for the central setup.
+You need the Hou-lm plug-in archive or a local source checkout, a reachable Open WebUI server, and an Open WebUI user API key with access to a model that supports tool calls. No local model installation or additional workstation service is required. See [connection and deployment requirements](houdini-connection.md) for the central setup.
 
 ## Open the panel
+
+For a normal installation, extract `hou-lm.json` and the `hou-lm` folder from the plug-in ZIP into `$HOUDINI_USER_PREF_DIR/packages`, then restart Houdini. Choose **+ → New Pane Tab Type → Hou-lm Assistant**. No launch command is needed. Follow the [package installation guide](package-install.md) for the exact layout and replacing an older checkout registration.
+
+Use Houdini's normal split-pane and tab controls to dock the assistant where you want it. Save your desktop layout to retain the pane arrangement.
+
+### Development: launch a source checkout
 
 Replace `C:/path/to/Hou-lm` with your checkout's location. Run this **inside Houdini's Python Shell**, or from a Python shelf tool:
 
@@ -14,7 +20,7 @@ import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/launch_houdini.py",
 
 The command makes the interface available for this Houdini session. In the pane where you want the assistant, choose **+ → New Pane Tab Type → Hou-lm Assistant**. Look near the bottom of the pane-type menu for that named entry. Choose **Hou-lm Assistant**, rather than the generic **Misc → Python Panel** entry. The launcher does not automatically create a new tab; running it again focuses an existing assistant tab.
 
-Use Houdini's normal split-pane and tab controls to dock the assistant where you want it. The launcher queues UI work on Houdini's main thread. Do not call the panel's widget constructor directly from the Python Shell.
+The launcher queues UI work on Houdini's main thread. Do not call the panel's widget constructor directly from the Python Shell.
 
 ## Connect
 
@@ -109,7 +115,15 @@ That change should execute without a review popup. Save the scene as `shot_v001.
 
 ## Load panel updates
 
-Leave the assistant pane open and run inside Houdini:
+For plug-in releases, close Houdini and replace the installed package as described in [Upgrading](package-install.md#upgrading). Restarting also loads changes to the panel definition and stable host.
+
+For development, leave the assistant pane open and run inside Houdini. With the copy-to-packages installation:
+
+```python
+import hou, runpy; _ = runpy.run_path(hou.expandString("$HOULM_ROOT/scripts/reload_houdini.py"), run_name="__main__")
+```
+
+With a source checkout:
 
 ```python
 import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/reload_houdini.py", run_name="__main__")
@@ -119,9 +133,9 @@ The reloader replaces the assistant child widget while keeping the native pane i
 
 Changes to `hou_lm.pypanel` or `panel_host.py` require a Houdini restart. The reloader also reports when an older incompatible panel needs a restart.
 
-## Optional: make it available after restarting Houdini
+## Development: register a source checkout persistently
 
-Run inside Houdini:
+This is an alternative to the copy-to-packages installation. Keep only one active Hou-lm registration. Run inside Houdini:
 
 ```python
 import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/install_houdini.py", run_name="__main__")
@@ -135,6 +149,7 @@ Keep the checkout at that location, or update the package path after moving it. 
 
 | Symptom | Next step |
 | --- | --- |
+| Installed package has no named pane entry | Confirm `hou-lm.json` is directly inside `packages` beside `hou-lm/`, restart Houdini, and check the supported Python/PySide2 build. See [package installation](package-install.md). |
 | Launcher prints a message but no pane opens | Choose **+ → New Pane Tab Type → Hou-lm Assistant**. |
 | Updated files have no visible effect | Use the reload command; relaunching only focuses the existing pane. |
 | No history file | Save the HIP, then open **Log** for the actual path or save error. |

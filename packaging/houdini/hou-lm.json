@@ -1,0 +1,8 @@
+{
+  "enable": "houdini_version >= '20.5' and houdini_version < '21.0' and houdini_python == 'python3.11'",
+  "load_package_once": true,
+  "env": [
+    { "HOULM_ROOT": "$HOUDINI_PACKAGE_PATH/hou-lm" }
+  ],
+  "hpath": "$HOULM_ROOT/houdini"
+}

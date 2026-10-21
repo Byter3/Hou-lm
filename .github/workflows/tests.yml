@@ -26,3 +26,24 @@ jobs:
           python-version: '3.11'
       - name: Run offline tests
         run: python -m unittest discover -s tests -q
+
+  houdini-package:
+    name: Build Houdini plug-in
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Build installable ZIP
+        run: python scripts/package_houdini.py
+      - name: Upload Houdini plug-in
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/Hou-lm-*-houdini20.5.zip
+          archive: false
+          if-no-files-found: error

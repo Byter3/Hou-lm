@@ -9,6 +9,7 @@ Use Python 3.11. The supported interactive target is Windows Houdini 20.5.445 wi
 | `houdini/python3.11libs/houlm/` | Panel, transport, agent loop, scene tools, history and model context |
 | `houdini/python_panels/` | Named native Houdini panel definition |
 | `scripts/launch_houdini.py`, `reload_houdini.py`, `install_houdini.py` | Artist launch, safe reload and optional persistent registration |
+| `scripts/package_houdini.py`, `packaging/` | Copy-to-packages client ZIP builder and package definition |
 | `scripts/diagnose_*.py`, `inspect_webui_route.py` | Opt-in diagnostics; some contact the configured model service |
 | `scripts/verify_houdini_*.py` | Native HOM regression fixtures for separate empty `hython` processes |
 | `gateway/` | Optional server-side stream compatibility adapter |
@@ -41,6 +42,20 @@ Native HOM checks require a fresh, empty `hython` process with a Houdini license
 ```
 
 Never run these fixtures in the artist's interactive session. They create disposable scene content; the history fixture also saves temporary HIPs.
+
+## Build the Houdini plug-in
+
+From the repository root:
+
+```sh
+python scripts/package_houdini.py
+```
+
+This produces `dist/Hou-lm-0.1.0-houdini20.5.zip`, containing `hou-lm.json` beside the `hou-lm` client folder. Use `--output /path/to/package.zip` for another output file. The builder uses an explicit file allowlist and includes a SHA-256 manifest; it does not import Houdini, execute scene commands or contact a model. Keep generated archives out of commits.
+
+The **Tests** workflow is also configured to build and upload this installable ZIP after both Windows and Linux test jobs pass. Download it from that run's **Artifacts** section; it is uploaded as the ZIP itself, without an outer archive. Check the selected run's result before using its artifact. Configuring the job does not establish a passing hosted run, and it does not create a GitHub release.
+
+The source `docs/package-install.md` is included as the archive's `hou-lm/README.md`, so its links must also work outside a checkout. Keep the `scripts/` and `houdini/` sibling layout intact: the existing launch and reload helpers resolve their paths from it. See [package installation](docs/package-install.md) for artist and studio deployment. The server/gateway package is a separate artifact.
 
 ## Preserve behavior
 

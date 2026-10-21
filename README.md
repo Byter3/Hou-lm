@@ -1,6 +1,6 @@
 # Hou-lm
 
-A dockable Houdini assistant that can inspect your scene, write and run Houdini Python, and help build or repair node networks through conversation.
+A dockable Houdini assistant for studio workflows that can inspect your scene, write and run Houdini Python, and help build or repair node networks through conversation.
 
 The model runs through your configured Open WebUI service. Scene tools execute inside the artist's current Houdini session. There is no separate scene server to install.
 
@@ -19,21 +19,22 @@ The model runs through your configured Open WebUI service. Scene tools execute i
 
 Routine inspection reads authored state and available last-cook diagnostics without forcing a cook. A task that executes Python, changes nodes or evaluates geometry can still trigger Houdini cooking. General Python runs with the artist process's permissions; it is not a sandbox, and an exception can leave partial changes.
 
-## Start in Houdini
+## Install in Houdini
+
+**[Download the Houdini plug-in ZIP](https://github.com/Byter3/Hou-lm/releases/download/v0.1.0/Hou-lm-0.1.0-houdini20.5.zip)** · [Release notes](https://github.com/Byter3/Hou-lm/releases/tag/v0.1.0)
 
 You need a working Open WebUI account, its user API key, and a model that supports tool calls. The panel uses Houdini's bundled Python and Qt; it needs no `pip install` in Houdini.
 
-1. Clone or download this repository to a permanent local folder.
-2. Open **Windows → Python Shell** in Houdini. Replace the example path and run:
-
-   ```python
-   import runpy; _ = runpy.run_path(r"C:\path\to\Hou-lm\scripts\launch_houdini.py", run_name="__main__")
-   ```
-
-3. In the pane where you want the assistant, choose **+ → New Pane Tab Type → Hou-lm Assistant**. Use that named entry instead of the generic Python Panel.
+1. Download `Hou-lm-0.1.0-houdini20.5.zip` using the link above. On the release page, choose that file under **Assets**, rather than GitHub's automatic **Source code** archives.
+2. Close Houdini. Extract **both** `hou-lm.json` and the `hou-lm` folder directly into `$HOUDINI_USER_PREF_DIR/packages`.
+3. Restart Houdini and choose **+ → New Pane Tab Type → Hou-lm Assistant** in the pane where you want it docked.
 4. Connect using your Open WebUI base URL and user API key, then choose a model.
 
-For persistent installation, reload instructions, history and controls, see the [panel quickstart](docs/houdini-panel-quickstart.md).
+The archive uses relative paths: no path editing, Python Shell launch command or `houdini.env` change is needed. See [package installation](docs/package-install.md) for locating your preferences folder, replacing an earlier checkout registration, studio distribution and upgrades. The package targets Houdini 20.5 with Python 3.11 and PySide2; it does not enable itself in Houdini 21 or Python variants.
+
+The one-line source-checkout launcher remains available for development. See the [panel quickstart](docs/houdini-panel-quickstart.md) for that workflow, reload instructions, history and controls.
+
+To build the plug-in ZIP from source, run `python scripts/package_houdini.py`; it writes to the local `dist/` folder. Built ZIPs are distributed through GitHub Releases, while `dist/` remains excluded from Git.
 
 Start with a read-only prompt:
 
@@ -52,6 +53,7 @@ Each panel acts on its own Houdini process. Provider availability and user acces
 
 | Guide | Contents |
 | --- | --- |
+| [Package installation](docs/package-install.md) | Copy-to-packages layout, upgrades, uninstall and studio distribution |
 | [Panel quickstart](docs/houdini-panel-quickstart.md) | Launch, install, login, controls, save/resume and test prompts |
 | [Scene integration](docs/houdini-connection.md) | Architecture, scene scope and typed tools |
 | [Python execution](docs/agent-execution.md) | General Python, review, cancellation and partial failures |
