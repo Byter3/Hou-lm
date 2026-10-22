@@ -1,6 +1,6 @@
 # Project boundaries
 
-Hou-lm is the Houdini assistant. The After Effects assistant is developed separately in [Ae-lm](https://github.com/Byter3/Ae-lm), currently a development scaffold with no installable plug-in. Each application owns its host integration, tests, installation package, releases and acceptance baseline.
+Hou-lm is the Houdini assistant. The After Effects assistant is developed separately in [Ae-lm](https://github.com/Byter3/Ae-lm), currently a development scaffold with no installable plug-in. Each application owns its host integration, tests, installation package, releases and acceptance baseline. The third repository, [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend), owns the shared server example and optional gateway adapter.
 
 The repository separation preserves the confirmed Houdini runtime and its current package paths. The [working baseline](working-baseline.md), existing release tags and downloadable Houdini package remain reference points for Houdini changes.
 
@@ -10,13 +10,13 @@ The repository separation preserves the confirmed Houdini runtime and its curren
 | --- | --- |
 | Houdini UI, HOM tools, Python review/execution, HIP history and package | This repository: `houdini/`, client scripts, `packaging/` and Houdini tests |
 | After Effects UI, composition/layer tools, host execution, project history and package | Separate [Ae-lm repository](https://github.com/Byter3/Ae-lm); host implementation and first interactive acceptance are separate milestones |
-| Optional Open WebUI / LiteLLM / Ollama example | This repository's `compose.yaml` and [server setup](server-setup.md) remain the maintained reference for now |
-| Optional LiteLLM compatibility adapter | This repository's `gateway/`, its builder and tests remain together |
+| Optional Open WebUI / LiteLLM / Ollama / PostgreSQL example | [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend), with its Compose file and server guide |
+| Optional LiteLLM compatibility adapter | The backend repository's `gateway/`, source-archive builder and offline checks |
 | Cross-application behavior | Conventions below; each client implements and tests them for its host |
 
 Both clients can be configured to use the same studio service and account/model-access system. They keep their own conversations, project data and pending actions. A request from one client must execute only in that client's application session. Sharing a backend does not share an open scene or composition between applications.
 
-The existing server setup is optional. Introducing an After Effects client does not require deploying another stack, changing the accepted Houdini service or installing an inference server on artists' machines. Server changes require their own review and validation.
+The existing server setup is optional. Introducing an After Effects client does not require deploying another stack, changing the accepted Houdini service or installing an inference server on artists' machines. Server changes require their own review and validation. Moving the backend source to another repository does not migrate running containers or data; preserve the existing Compose project/Portainer stack name, volume mappings and private settings if adopting a later backend update. See the [backend migration notes](https://github.com/Byter3/studio-assistant-backend/blob/main/docs/migration.md).
 
 ## Shared conventions
 
@@ -39,7 +39,7 @@ First prove the After Effects workflow end to end: inspect the active compositio
 
 Then compare the two implementations. Extract code only where both clients use the same semantics and can test the same contract. Host-independent protocol handling, context budgeting or history utilities are candidates; host APIs, widgets and execution lifecycle stay with their application. Different implementation languages may make a shared specification and equivalent fixtures more useful than a common library.
 
-Any extraction must have an explicit version, compatibility tests in both clients and a rollback path. Each artist package must bundle the required version so installing or updating one client cannot silently change the other. A shared-core repository is deferred until these conditions are met.
+Any extraction must have an explicit version, compatibility tests in both clients and a rollback path. Each artist package must bundle the required version so installing or updating one client cannot silently change the other. A shared client-core repository is deferred until these conditions are met. This is separate from the backend repository, which already owns server deployment sources and does not supply a client runtime library.
 
 ## Independent validation
 

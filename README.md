@@ -49,9 +49,9 @@ Houdini panel → Open WebUI → configured model connection
 Model tool requests → artist's Houdini session → results returned to the model
 ```
 
-Each panel acts on its own Houdini process. Provider availability and user access are managed by the central service. If you already have a working service, use it; the example Docker stack and optional gateway adapter are separate deployment choices.
+Each panel acts on its own Houdini process. Provider availability and user access are managed by the central service. The shared [studio-assistant-backend repository](https://github.com/Byter3/studio-assistant-backend) owns the optional Docker stack, server documentation and LiteLLM compatibility adapter. If you already have a working service, continue using it; the repository split does not require a deployment change.
 
-Hou-lm owns the Houdini integration and its releases. The separate [Ae-lm repository](https://github.com/Byter3/Ae-lm) is the development scaffold for an After Effects assistant; it does not yet contain an installable plug-in. Both clients are intended to use the same studio service and follow the same review, history and command-reporting conventions. See [project boundaries](docs/project-boundaries.md) for what is shared and where future work belongs.
+Hou-lm owns the Houdini integration and its releases. The separate [Ae-lm repository](https://github.com/Byter3/Ae-lm) is the development scaffold for an After Effects assistant; it does not yet contain an installable plug-in. Both clients are intended to use the shared backend and follow the same review, history and command-reporting conventions. Each client installs independently; no backend checkout is required on the artist workstation. See [project boundaries](docs/project-boundaries.md) for ownership and future shared-code work.
 
 | Guide | Contents |
 | --- | --- |
@@ -61,7 +61,7 @@ Hou-lm owns the Houdini integration and its releases. The separate [Ae-lm reposi
 | [Project boundaries](docs/project-boundaries.md) | Houdini and After Effects ownership, shared service and extraction criteria |
 | [Python execution](docs/agent-execution.md) | General Python, review, cancellation and partial failures |
 | [Server setup](docs/server-setup.md) | Optional Open WebUI / LiteLLM / Ollama / PostgreSQL example |
-| [Gateway compatibility](gateway/README.md) | Optional version-checked LiteLLM stream adapter |
+| [Gateway compatibility](https://github.com/Byter3/studio-assistant-backend/blob/main/gateway/README.md) | Optional version-checked LiteLLM stream adapter in the backend repository |
 | [Troubleshooting](docs/tool-stream-troubleshooting.md) | Response diagnostics and bounded delivery checks |
 | [Working baseline](docs/working-baseline.md) | Confirmed behavior, regression checks and validation limits |
 | [Contributing](CONTRIBUTING.md) | Source layout and local tests |

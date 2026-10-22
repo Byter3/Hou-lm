@@ -13,7 +13,7 @@ Hou-lm is an assistant inside the artist's Houdini process. General Python execu
 
 An Undo group does not make Python execution transactional. Exceptions can leave partial changes; callbacks, file writes, cooks and renders may have effects outside Undo. Stop cancels queued work and future requests but cannot reliably interrupt a synchronous Houdini operation already running. The panel retains evidence of completed work after later request failures.
 
-The optional gateway adapter is version-checked and separate from the panel. Treat server image, authentication and routing changes as deployment changes, with their own testing and rollback plan.
+The optional gateway adapter is version-checked and maintained in [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend), separately from the panel. Treat server image, authentication and routing changes as deployment changes, with their own testing and rollback plan.
 
 ## Reporting
 

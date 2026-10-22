@@ -67,9 +67,9 @@ These two scripts accept 1–5 repeats and use a 180-second socket timeout per r
 
 The client supports consistent final-message snapshots as well as incremental tool arguments. It preserves repeated partial text but rejects conflicting identities, invalid JSON and missing required arguments. It cannot recover content that an upstream converter omitted before transmission.
 
-The optional [LiteLLM adapter](../gateway/README.md) addresses specific reproduced ChatGPT-provider conversion patterns. It preserves final tool arguments and answer text in supported versions. It is not required for every model or evidence that all empty responses have that cause.
+The optional [LiteLLM adapter](https://github.com/Byter3/studio-assistant-backend/blob/main/gateway/README.md) in the backend repository addresses specific reproduced ChatGPT-provider conversion patterns. It preserves final tool arguments and answer text in supported versions. It is not required for every model or evidence that all empty responses have that cause.
 
-To inspect an installed LiteLLM converter offline, copy `scripts/diagnose_litellm_stream.py` into that environment and run:
+To inspect an installed LiteLLM converter offline, obtain [scripts/diagnose_litellm_stream.py](https://github.com/Byter3/studio-assistant-backend/blob/main/scripts/diagnose_litellm_stream.py) from the backend repository, copy it into that environment and run:
 
 ```sh
 python /path/to/diagnose_litellm_stream.py --json

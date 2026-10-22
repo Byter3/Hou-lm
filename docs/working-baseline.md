@@ -64,3 +64,7 @@ Use the [quickstart edit and persistence prompts](houdini-panel-quickstart.md#te
 - Restored scene observations can be stale. Authored parameter/wiring inspection and available last-cook diagnostics do not establish freshly cooked geometry or render correctness.
 
 Preserve this reference and change one subsystem at a time when investigating a regression.
+
+## Repository layout update — 22 October 2026
+
+The server example and optional gateway now belong to [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend). The historical validation above describes the original combined checkout; the `working-2026-10-15` and `v0.1.0` tags retain that layout. The Houdini runtime and published client package remain unchanged. Backend tests now run in their own repository, so current client test counts should not be compared with the historical combined total as though tests had been disabled.

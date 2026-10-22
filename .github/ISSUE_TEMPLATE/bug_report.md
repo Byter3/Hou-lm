@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible panel or gateway problem
+about: Report a reproducible Houdini client problem
 title: ''
 labels: ''
 assignees: ''
@@ -9,6 +9,8 @@ assignees: ''
 ## What happened
 
 Describe the expected and actual behavior.
+
+For an issue isolated to the server stack or compatibility adapter, use the [backend repository](https://github.com/Byter3/studio-assistant-backend). A panel error alone does not identify which component failed.
 
 ## Reproduction
 

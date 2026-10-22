@@ -21,9 +21,9 @@ git push origin working-2026-10-15
 
 If `origin` already exists, inspect `git remote -v` and use the intended remote instead of adding another one. The first command only configures the remote; the push commands publish the source and baseline tag.
 
-After pushing, verify the public file list and run the configured GitHub Actions workflow. Its Windows/Linux Python jobs skip unavailable Houdini Qt and LiteLLM integration tests; they do not replace interactive validation. Enable private vulnerability reporting if desired so the channel described in `SECURITY.md` is available.
+After pushing, verify the public file list and run the configured GitHub Actions workflow. Its Windows/Linux Python jobs skip unavailable Houdini Qt and platform-specific checks; they do not replace interactive validation. Gateway and LiteLLM adapter checks belong to the backend repository. Enable private vulnerability reporting if desired so the channel described in `SECURITY.md` is available.
 
-Describe the project as an early Windows/Houdini 20.5.445 release. Do not attach private diagnostic archives or claim a reproducible server deployment from the floating-tag Compose example.
+Describe the project as an early Windows/Houdini 20.5.445 release. Do not attach private diagnostic archives or claim that the client release establishes a reproducible server deployment. The optional server example is maintained separately in [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend).
 
 ## Build the artist plug-in archive
 
@@ -35,4 +35,4 @@ The ZIP must contain `hou-lm.json` and the sibling `hou-lm` folder directly at i
 
 Use [the package guide](package-install.md) for artist instructions and its read-only acceptance prompt. A successful archive build or offline suite does not establish interactive package discovery; record that check separately. Do not claim Houdini 21 or Qt6 compatibility from the current Houdini 20.5 package.
 
-GitHub's automatic source ZIP is a checkout, not the ready-to-copy plug-in archive. Publish the built ZIP as a release asset when release publication is authorized; keep `dist/` ignored in Git. The optional gateway source bundle remains a separate artifact generated with `python scripts/package_gateway.py`.
+GitHub's automatic source ZIP is a checkout, not the ready-to-copy plug-in archive. Publish the built ZIP as a release asset when release publication is authorized; keep `dist/` ignored in Git. Build the optional gateway source bundle from the [backend repository](https://github.com/Byter3/studio-assistant-backend) using its packaging instructions. Do not attach a backend artifact to a client release as though it were required for installation.

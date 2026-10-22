@@ -23,7 +23,7 @@ The panel sends text/JSON: prompts, selected-node snapshots when enabled, bounde
 - Enter the Open WebUI base URL in **Connections**, for example `https://openwebui.example.com`. The panel has no fixed studio address.
 - Use an Open WebUI user key, not the LiteLLM master key or a provider credential.
 
-The existing central stack can provide local or hosted models through LiteLLM. Deployment-specific ChatGPT streaming compatibility is described in the [gateway guide](../gateway/README.md); model configuration belongs to the server, not the Houdini launcher.
+The existing central stack can provide local or hosted models through LiteLLM. The shared [backend repository](https://github.com/Byter3/studio-assistant-backend) owns server deployment sources. Deployment-specific ChatGPT streaming compatibility is described in its [gateway guide](https://github.com/Byter3/studio-assistant-backend/blob/main/gateway/README.md); model configuration belongs to the server, not the Houdini launcher.
 
 Windows saves a successful login using current-user DPAPI, bound to the normalized server URL, including scheme, port and base path. Preferences save the URL, model and local Auto-run setting without the key. A different URL cannot inherit the old server's credential. Sign out removes the saved key for the current server; closing the panel retains it. There is no plaintext credential fallback.
 

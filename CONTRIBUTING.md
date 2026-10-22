@@ -2,7 +2,7 @@
 
 Use Python 3.11. The supported interactive target is Windows Houdini 20.5.445 with its bundled PySide2. Keep changes to the panel separate from gateway or deployment changes so regressions can be isolated.
 
-This repository owns the Houdini client. After Effects integration belongs in the separate [Ae-lm project](https://github.com/Byter3/Ae-lm), currently a development scaffold. The current server example and optional gateway remain here while both clients establish their requirements. Read [project boundaries](docs/project-boundaries.md) before extracting shared code or adding another application's tools.
+This repository owns the Houdini client. After Effects integration belongs in the separate [Ae-lm project](https://github.com/Byter3/Ae-lm), currently a development scaffold. The server stack, optional gateway adapter and their checks belong in [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend). Read [project boundaries](docs/project-boundaries.md) before extracting shared client code or adding another application's tools.
 
 ## Source layout
 
@@ -14,8 +14,7 @@ This repository owns the Houdini client. After Effects integration belongs in th
 | `scripts/package_houdini.py`, `packaging/` | Copy-to-packages client ZIP builder and package definition |
 | `scripts/diagnose_*.py`, `inspect_webui_route.py` | Opt-in diagnostics; some contact the configured model service |
 | `scripts/verify_houdini_*.py` | Native HOM regression fixtures for separate empty `hython` processes |
-| `gateway/` | Optional server-side stream compatibility adapter |
-| `tests/` | Unit, synthetic provider and offscreen Qt/loopback tests |
+| `tests/` | Client unit, synthetic protocol and offscreen Qt/loopback tests |
 
 The verification scripts are test fixtures. The panel does not import them as task recipes.
 
@@ -35,9 +34,9 @@ On Windows, use Houdini's plain Python to include the bundled Qt tests:
 & 'C:\Program Files\Side Effects Software\Houdini 20.5.445\python311\python.exe' -m unittest discover -s tests -q
 ```
 
-These tests use synthetic data, temporary files and loopback HTTP fixtures. They do not request a real model response or edit an artist's scene. Qt tests skip when PySide2 is unavailable. LiteLLM integration tests skip without that optional package; POSIX-only tests skip on Windows. Set `HFS` if testing another compatible Houdini installation. Do not install a different Qt binding into Houdini to satisfy these tests.
+These tests use synthetic data, temporary files and loopback HTTP fixtures. They do not request a real model response or edit an artist's scene. Qt tests skip when PySide2 is unavailable; POSIX-only tests skip on Windows. Set `HFS` if testing another compatible Houdini installation. Do not install a different Qt binding into Houdini to satisfy these tests.
 
-GitHub Actions runs the ordinary Python suite on Windows and Linux. That checks portable logic and fixtures, not native Houdini behavior. The [gateway guide](gateway/README.md) describes its separate dependency-specific checks.
+GitHub Actions runs the ordinary Python suite on Windows and Linux. That checks portable logic and fixtures, not native Houdini behavior. Gateway and installed-LiteLLM checks now run in the [backend repository](https://github.com/Byter3/studio-assistant-backend); they are not a dependency of the Houdini client suite.
 
 Native HOM checks require a fresh, empty `hython` process with a Houdini license, for example:
 
@@ -59,7 +58,7 @@ This produces `dist/Hou-lm-0.1.0-houdini20.5.zip`, containing `hou-lm.json` besi
 
 The **Tests** workflow is also configured to build and upload this installable ZIP after both Windows and Linux test jobs pass. Download it from that run's **Artifacts** section; it is uploaded as the ZIP itself, without an outer archive. Check the selected run's result before using its artifact. Configuring the job does not establish a passing hosted run, and it does not create a GitHub release.
 
-The source `docs/package-install.md` is included as the archive's `hou-lm/README.md`, so its links must also work outside a checkout. Keep the `scripts/` and `houdini/` sibling layout intact: the existing launch and reload helpers resolve their paths from it. See [package installation](docs/package-install.md) for artist and studio deployment. The server/gateway package is a separate artifact.
+The source `docs/package-install.md` is included as the archive's `hou-lm/README.md`, so its links must also work outside a checkout. Keep the `scripts/` and `houdini/` sibling layout intact: the existing launch and reload helpers resolve their paths from it. See [package installation](docs/package-install.md) for artist and studio deployment. The [backend repository](https://github.com/Byter3/studio-assistant-backend) builds its own separate gateway source artifact.
 
 ## Preserve behavior
 
