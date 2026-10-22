@@ -2,6 +2,8 @@
 
 Use Python 3.11. The supported interactive target is Windows Houdini 20.5.445 with its bundled PySide2. Keep changes to the panel separate from gateway or deployment changes so regressions can be isolated.
 
+This repository owns the Houdini client. After Effects integration belongs in the separate [Ae-lm project](https://github.com/Byter3/Ae-lm), currently a development scaffold. The current server example and optional gateway remain here while both clients establish their requirements. Read [project boundaries](docs/project-boundaries.md) before extracting shared code or adding another application's tools.
+
 ## Source layout
 
 | Path | Purpose |
@@ -16,6 +18,8 @@ Use Python 3.11. The supported interactive target is Windows Houdini 20.5.445 wi
 | `tests/` | Unit, synthetic provider and offscreen Qt/loopback tests |
 
 The verification scripts are test fixtures. The panel does not import them as task recipes.
+
+Each client must build and release independently. Do not add sibling-checkout imports, Git submodules, runtime source downloads or an install-time package-manager requirement to connect the projects. A future shared library needs an explicit version and must be bundled in the artist package.
 
 ## Run tests
 

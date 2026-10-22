@@ -51,11 +51,14 @@ Model tool requests → artist's Houdini session → results returned to the mod
 
 Each panel acts on its own Houdini process. Provider availability and user access are managed by the central service. If you already have a working service, use it; the example Docker stack and optional gateway adapter are separate deployment choices.
 
+Hou-lm owns the Houdini integration and its releases. The separate [Ae-lm repository](https://github.com/Byter3/Ae-lm) is the development scaffold for an After Effects assistant; it does not yet contain an installable plug-in. Both clients are intended to use the same studio service and follow the same review, history and command-reporting conventions. See [project boundaries](docs/project-boundaries.md) for what is shared and where future work belongs.
+
 | Guide | Contents |
 | --- | --- |
 | [Package installation](docs/package-install.md) | Copy-to-packages layout, upgrades, uninstall and studio distribution |
 | [Panel quickstart](docs/houdini-panel-quickstart.md) | Launch, install, login, controls, save/resume and test prompts |
 | [Scene integration](docs/houdini-connection.md) | Architecture, scene scope and typed tools |
+| [Project boundaries](docs/project-boundaries.md) | Houdini and After Effects ownership, shared service and extraction criteria |
 | [Python execution](docs/agent-execution.md) | General Python, review, cancellation and partial failures |
 | [Server setup](docs/server-setup.md) | Optional Open WebUI / LiteLLM / Ollama / PostgreSQL example |
 | [Gateway compatibility](gateway/README.md) | Optional version-checked LiteLLM stream adapter |
