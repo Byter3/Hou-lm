@@ -48,6 +48,7 @@ coverage.xml
 *.hip.json
 *.hiplc.json
 *.hipnc.json
+*.json.assets/
 
 # Editor and OS files.
 .vscode/

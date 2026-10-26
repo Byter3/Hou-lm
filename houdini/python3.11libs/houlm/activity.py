@@ -76,6 +76,8 @@ def _quality(result):
 def _pending(name, arguments):
     path = _text(arguments.get("path")) or "requested node"
     suffix = _filter(arguments)
+    if name == "capture_viewport":
+        return _row("inspecting", "Capturing the current-frame viewport", "Native single-frame flipbook; current-frame evaluation may cook the scene.")
     if name == "inspect_node":
         return _row("inspecting", "Reading %s" % path, "Checking existing parameters and wiring; no scene changes.")
     if name == "list_children":
@@ -145,6 +147,10 @@ def describe_call(call, result=None):
     data = _object(result)
     if data.get("role") == "tool":
         data = _object(data.get("content"))
+    if name == "capture_viewport":
+        return _row("inspected" if data.get("success") is True else "failed",
+                    "Captured the current-frame viewport" if data.get("success") is True else "Viewport capture unavailable",
+                    _text(data.get("message"), MAX_DETAIL))
     if name in _PROPOSALS:
         return _edit_outcome(name, arguments, data)
     if data.get("ok") is not True or not isinstance(data.get("result"), dict):

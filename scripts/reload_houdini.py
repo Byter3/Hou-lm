@@ -10,11 +10,11 @@ if str(MODULES) not in sys.path:
 
 # Never reload panel_host: Houdini retains instances of its stable root class.
 RELOAD_MODULES = (
-    "houlm.stream_diagnostics", "houlm.core", "houlm.credentials", "houlm.scene",
+    "houlm.stream_diagnostics", "houlm.vision", "houlm.core", "houlm.credentials", "houlm.scene",
     "houlm.inspection", "houlm.edits", "houlm.discovery", "houlm.homhelp",
     "houlm.python_actions", "houlm.toolchat", "houlm.activity", "houlm.node_paths", "houlm.chat_format",
     "houlm.history_store", "houlm.conversations", "houlm.context_index", "houlm.request_context",
-    "houlm.node_ui", "houlm.change_review", "houlm.transcript", "houlm.panel",
+    "houlm.node_ui", "houlm.vision_ui", "houlm.change_review", "houlm.transcript", "houlm.panel",
 )
 
 
@@ -170,8 +170,12 @@ def _reload_on_ui_thread():
         launcher = runpy.run_path(str(ROOT / "scripts" / "launch_houdini.py"))
         tabs = launcher["_assistant_tabs"](hou)
         hosts = [tab.activeInterfaceRootWidget() for tab in tabs]
-        if not hosts or any(host is None or not shiboken2.isValid(host)
-                            or getattr(type(host), "_houlm_host_version", None) != 1 for host in hosts):
+        if not hosts:
+            _notice("Hou-lm: no Assistant pane is open. Open New Pane Tab Type > Hou-lm Assistant from the pane + menu, then run reload again.")
+            hou.session._hou_lm_reload_pending = False
+            return
+        if any(host is None or not shiboken2.isValid(host)
+               or getattr(type(host), "_houlm_host_version", None) != 1 for host in hosts):
             _notice("Hou-lm: this session needs a clean restart to load the updated panel host. Save your work, restart Houdini, run launch_houdini.py, then choose Hou-lm Assistant from the pane + menu. No panes were rebuilt.")
             hou.session._hou_lm_reload_pending = False
             return

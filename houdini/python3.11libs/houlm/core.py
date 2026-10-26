@@ -256,6 +256,7 @@ def parse_models(payload):
 
 
 def build_chat_payload(model_id, messages, *, context_notice=""):
+    from . import vision
     if not isinstance(model_id, str) or not model_id.strip() or len(model_id) > 512:
         raise ValueError("Select a model supplied by the central server.")
     if not isinstance(messages, list) or not messages:
@@ -266,6 +267,7 @@ def build_chat_payload(model_id, messages, *, context_notice=""):
     for message in messages:
         if not isinstance(message, dict) or message.get("role") not in ("user", "assistant"):
             raise ValueError("The panel accepts only user and assistant text messages.")
+        vision.validate_message(message)
         content = message.get("content")
         if not isinstance(content, str):
             raise ValueError("Only plain text is accepted; image and file payloads are disabled.")

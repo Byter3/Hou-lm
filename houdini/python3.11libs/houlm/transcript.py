@@ -15,6 +15,7 @@ from . import chat_format, node_paths
 
 
 COMMAND_MARKER = "\x1eHOULM_COMMAND:"
+IMAGE_MARKER = "\x1eHOULM_IMAGE:"
 _IDENTIFIER = re.compile(r"[A-Za-z0-9_.:-]{1,256}\Z")
 _STATUSES = {
     "pending": ("Awaiting execution", "#b5a37e"),
@@ -71,7 +72,9 @@ def plain_text(parts, commands):
             records[record["id"]] = record
     blocks = []
     for value in parts:
-        if value.startswith(COMMAND_MARKER):
+        if value.startswith(IMAGE_MARKER):
+            blocks.append("Image attachment: " + value[len(IMAGE_MARKER):])
+        elif value.startswith(COMMAND_MARKER):
             record = records.get(value[len(COMMAND_MARKER):])
             if record:
                 label = _STATUSES[record["status"]][0]
@@ -104,6 +107,9 @@ class Transcript(QtWidgets.QTextBrowser):
         self._commands = {}
         self._expanded = set()
         self._expanded_activity = set()
+        self._images = {}
+        self._image_loader = None
+        self._expanded_images = set()
         self.setObjectName("transcript")
         self.setOpenExternalLinks(False)
         self.setOpenLinks(False)
@@ -126,7 +132,36 @@ class Transcript(QtWidgets.QTextBrowser):
             self._render(notify=False, preserve_position=True)
 
     def loadResource(self, resource_type, url):
+        match = re.fullmatch(r"houlm-image:///([a-f0-9]{64})", url.toString())
+        if resource_type == QtGui.QTextDocument.ImageResource and match and match[1] in self._images and self._image_loader:
+            try:
+                image = QtGui.QImage.fromData(self._image_loader(self._images[match[1]]))
+                return image.scaled(360, 240, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+            except (OSError, ValueError, RuntimeError):
+                pass
         return QtCore.QByteArray()
+
+    def set_images(self, manifests, loader):
+        self._images = {item["id"]: item for item in manifests}
+        self._image_loader = loader
+        self._expanded_images.clear()
+        self._render(notify=False, preserve_position=True)
+
+    def append_image(self, manifest):
+        self._images[manifest["id"]] = manifest
+        self._parts.append(IMAGE_MARKER + manifest["id"])
+        self._render()
+
+    def _image_card(self, identifier):
+        manifest = self._images.get(identifier)
+        if manifest is None:
+            return self._text_card("Tool activity:\nImage attachment is unavailable.")
+        expanded = identifier in self._expanded_images
+        label = ("Viewport capture: " if manifest.get("kind") == "capture" else "Reference: ") + manifest.get("name", "Image")
+        body = '<a style="color:#9bc7d6" href="houlm-image-toggle:///' + identifier + '">' + ('[-] ' if expanded else '[+] ') + html.escape(label) + '</a>'
+        if expanded:
+            body += '<br><img src="houlm-image:///' + identifier + '"><br>' + html.escape(str(manifest.get("metadata", {}).get("freshness", "Artist-attached reference image")))
+        return '<table width="94%" cellpadding="9" bgcolor="#19252e"><tr><td>' + body + '</td></tr></table><br>'
 
     def appendPlainText(self, value):
         self._parts.append(value)
@@ -137,6 +172,7 @@ class Transcript(QtWidgets.QTextBrowser):
         self._commands.clear()
         self._expanded.clear()
         self._expanded_activity.clear()
+        self._expanded_images.clear()
         self._render()
 
     def toPlainText(self):
@@ -147,6 +183,7 @@ class Transcript(QtWidgets.QTextBrowser):
         self._commands.clear()
         self._expanded.clear()
         self._expanded_activity.clear()
+        self._expanded_images.clear()
         self._render()
 
     def append_command(self, identifier, title, source, status="pending"):
@@ -195,6 +232,14 @@ class Transcript(QtWidgets.QTextBrowser):
 
     def _activate_link(self, url):
         value = url.toString()
+        match = re.fullmatch(r"houlm-image-toggle:///([a-f0-9]{64})", value)
+        if match and match[1] in self._images:
+            if match[1] in self._expanded_images:
+                self._expanded_images.remove(match[1])
+            else:
+                self._expanded_images.add(match[1])
+            self._render(notify=False, preserve_position=True)
+            return
         if node_paths.path_from_url(value) is not None:
             self.nodeActivated.emit(url)
             return
@@ -331,7 +376,9 @@ class Transcript(QtWidgets.QTextBrowser):
         follow_tail = not preserve_position and scrollbar.maximum() - previous_position < 32
         cards = []
         for index, value in enumerate(self._parts):
-            if value.startswith(COMMAND_MARKER):
+            if value.startswith(IMAGE_MARKER):
+                cards.append(self._image_card(value[len(IMAGE_MARKER):]))
+            elif value.startswith(COMMAND_MARKER):
                 record = self._commands.get(value[len(COMMAND_MARKER):])
                 if record:
                     cards.append(self._command_card(record))

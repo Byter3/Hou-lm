@@ -263,6 +263,12 @@ class ReloadTests(unittest.TestCase):
         self.assertFalse(self.hou.session._hou_lm_reload_pending)
         self.assertEqual(self.qt_queue, [])
         self.reload_module.assert_not_called()
+        message = self.hou.ui.setStatusMessage.call_args.args[0]
+        self.assertIn("no Assistant pane is open", message)
+        self.assertIn("New Pane Tab Type > Hou-lm Assistant", message)
+        self.assertIn("run reload again", message)
+        self.assertNotIn("restart", self.stdout.getvalue().lower())
+        self.assert_no_native_rebuild()
 
     def test_invalid_or_closing_or_retiring_host_prevents_any_retirement(self):
         for field in ("_valid", "_closed", "_retiring"):

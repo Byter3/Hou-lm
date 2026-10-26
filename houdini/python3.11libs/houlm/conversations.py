@@ -232,7 +232,7 @@ class Conversations:
             return True
         return False
 
-    def listen(self, before_switch, after_switch, before_save, after_save):
+    def listen(self, before_switch, after_switch, before_save, after_save, *, prepare_assets=None):
         """Callbacks supplied by the panel use weak references to its QObject."""
         if self._callback is not None:
             return
@@ -247,6 +247,9 @@ class Conversations:
                 elif event == events.BeforeSave:
                     before_save()
                 elif event == events.AfterSave:
+                    if prepare_assets is not None and prepare_assets() is False:
+                        after_save()
+                        return
                     self.after_save()
                     after_save()
             self.hou.hipFile.addEventCallback(callback)

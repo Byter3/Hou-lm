@@ -5,6 +5,7 @@ import unicodedata
 import copy
 import uuid
 import weakref
+from pathlib import Path
 from datetime import datetime, timezone
 
 import hou
@@ -12,7 +13,7 @@ from PySide2 import QtCore, QtGui, QtNetwork, QtWidgets
 
 from . import (activity, core, credentials, edits, python_actions, scene, toolchat,
               conversations, context_index, node_ui, change_review, request_context,
-              transcript as chat_transcript)
+              transcript as chat_transcript, vision, vision_ui)
 
 
 MAX_RESPONSE_BYTES = 4 * 1024 * 1024
@@ -271,6 +272,11 @@ class AssistantPanel(QtWidgets.QWidget):
         self._details_dialog = None
         self._edit_details_dialog = None
         self._history = None
+        self._asset_store = vision.AssetStore()
+        self._image_archive_warning = ""
+        self._reference_images = []
+        self._capture_count = 0
+        self._capture_receipts = {}
         self._history_bound = False
         self._restoring_history = False
         self._context = context_index.SceneContext(hou)
@@ -440,7 +446,13 @@ class AssistantPanel(QtWidgets.QWidget):
         self.prompt.setMaximumHeight(self.fontMetrics().lineSpacing() * 5)
         self.prompt.textChanged.connect(self._update_controls)
         self.prompt.submitted.connect(self._send)
+        self.prompt.imageAttached.connect(self._attach_image)
         composer_layout.addWidget(self.prompt)
+        self.image_strip = QtWidgets.QWidget()
+        self.image_strip_layout = QtWidgets.QHBoxLayout(self.image_strip)
+        self.image_strip_layout.setContentsMargins(0, 0, 0, 0)
+        self.image_strip.hide()
+        composer_layout.addWidget(self.image_strip)
         composer_bottom = QtWidgets.QHBoxLayout()
         self.models = _ModelCombo()
         self.models.setObjectName("models")
@@ -469,6 +481,11 @@ class AssistantPanel(QtWidgets.QWidget):
         self.preview_button.triggered.connect(self._preview_selection)
         self.node_context_button.setMenu(self.node_context_menu)
         composer_bottom.addWidget(self.node_context_button)
+        self.attach_button = QtWidgets.QPushButton("Attach")
+        self.attach_button.setAccessibleName("Attach reference images")
+        self.attach_button.setToolTip("Attach up to three PNG, JPEG or WebP references. Images are sent to your studio model.")
+        self.attach_button.clicked.connect(self._choose_images)
+        composer_bottom.addWidget(self.attach_button)
         composer_bottom.addStretch(1)
         self.send_button = QtWidgets.QPushButton()
         self.send_button.setObjectName("send")
@@ -487,7 +504,7 @@ class AssistantPanel(QtWidgets.QWidget):
         self.scene_tools.setAccessibleName("Scene access")
         self.scene_tools.setObjectName("selectionChip")
         self.scene_tools.setChecked(True)
-        self.scene_tools.setToolTip("Allow this model to inspect and change the open scene. Commands wait for Apply unless Auto-run commands is enabled. No screenshots. Changing access starts a new chat.")
+        self.scene_tools.setToolTip("Allow this model to inspect and change the open scene. Commands wait for Apply unless Auto-run commands is enabled. Viewport access needs its separate permission. Changing access starts a new chat.")
         self.scene_tools.toggled.connect(self._scene_toggled)
         context_row.addWidget(self.scene_tools)
         self.auto_run_commands = QtWidgets.QCheckBox("Auto-run")
@@ -496,6 +513,11 @@ class AssistantPanel(QtWidgets.QWidget):
         self.auto_run_commands.setToolTip("Always allow Python and scene edits without Apply popups. Saved on this workstation, not in the HIP or chat. Turn off to review future commands.")
         self.auto_run_commands.toggled.connect(self._auto_run_changed)
         context_row.addWidget(self.auto_run_commands)
+        self.allow_viewport_capture = QtWidgets.QCheckBox("Viewport access")
+        self.allow_viewport_capture.setObjectName("selectionChip")
+        self.allow_viewport_capture.setAccessibleName("Allow viewport capture")
+        self.allow_viewport_capture.setToolTip("Let the assistant capture the selected viewport automatically, up to three times per turn. Uses Houdini's native single-frame flipbook at the current frame; it may cook the scene. No region selection or MPlay. Off each panel load.")
+        context_row.addWidget(self.allow_viewport_capture)
         context_row.addStretch(1)
         self._history_status_text = ""
         self.history_status = QtWidgets.QPushButton("Log")
@@ -508,6 +530,147 @@ class AssistantPanel(QtWidgets.QWidget):
         self._context_changed()
         self._build_connection_dialog()
 
+    def _choose_images(self):
+        paths, unused_filter = QtWidgets.QFileDialog.getOpenFileNames(
+            self, "Attach reference images", "", "Images (*.png *.jpg *.jpeg *.webp)")
+        for path in paths:
+            self._attach_image(path)
+
+    def _attach_image(self, source):
+        if self._reply is not None or self._agent_history is not None:
+            return
+        if len(self._reference_images) >= 3:
+            self.status.setText("Up to three reference images can be active. Remove one before attaching another.")
+            return
+        try:
+            data, mime, width, height = vision_ui.normalized_image(source)
+            name = Path(source).name if isinstance(source, str) else "Pasted image"
+            manifest = self._asset_store.add(data, mime, width, height, name=name, kind="reference")
+        except (OSError, ValueError, RuntimeError) as error:
+            self.status.setText("Image not attached: " + str(error))
+            return
+        if not any(item["id"] == manifest["id"] for item in self._reference_images):
+            self._reference_images.append(manifest)
+        self._refresh_image_strip()
+        self._checkpoint()
+
+    def _remove_reference(self, identifier):
+        if self._reply is not None or self._agent_history is not None:
+            return
+        self._reference_images = [item for item in self._reference_images if item["id"] != identifier]
+        self._refresh_image_strip()
+        self._checkpoint()
+
+    def _refresh_image_strip(self):
+        while self.image_strip_layout.count():
+            item = self.image_strip_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        for manifest in self._reference_images:
+            button = QtWidgets.QPushButton("×")
+            button.setAccessibleName("Remove reference " + manifest["name"])
+            button.setToolTip(manifest["name"] + " — stays active on follow-ups. Click to remove from future sends.")
+            try:
+                pixmap = QtGui.QPixmap()
+                pixmap.loadFromData(self._asset_store.read(manifest))
+                button.setIcon(QtGui.QIcon(pixmap))
+                button.setIconSize(QtCore.QSize(44, 36))
+            except (OSError, ValueError):
+                button.setToolTip("Image file is missing. Remove it or attach the original again.")
+            button.clicked.connect(lambda unused=False, identifier=manifest["id"]: self._remove_reference(identifier))
+            self.image_strip_layout.addWidget(button)
+        self.image_strip_layout.addStretch(1)
+        self.image_strip.setVisible(bool(self._reference_images))
+
+    def _all_image_manifests(self):
+        manifests = list(self._reference_images)
+        if self._history is not None:
+            for conversation in self._history.document.get("conversations", []):
+                manifests.extend(conversation.get("draft_attachments", []))
+                for message in conversation.get("messages", []):
+                    manifests.extend(message.get("attachments", []))
+        for message in self._agent_history or self._pending_messages or self._messages:
+            manifests.extend(message.get("attachments", []))
+        return list({item["id"]: item for item in manifests}.values())
+
+    def _bind_images(self):
+        root = vision.asset_root(self._history.path) if self._history.path else None
+        epoch = self._history._scene_state().get("epoch", 0)
+        cached = getattr(hou, "_houlm_visual_assets", None)
+        if cached and cached[0] == epoch:
+            self._asset_store = cached[1]
+        else:
+            self._asset_store = vision.AssetStore(root)
+        item = self._history.active
+        self._reference_images = copy.deepcopy(item.get("draft_attachments", []))
+        if root is not None and self._asset_store.root != root:
+            try:
+                self._move_image_store(root)
+            except (OSError, ValueError):
+                self.status.setText("Could not move image assets to this HIP's history folder. Existing images remain at the previous location.")
+        hou._houlm_visual_assets = (epoch, self._asset_store)
+        self._refresh_image_strip()
+        self.transcript.set_images(self._all_image_manifests(), self._asset_store.read)
+
+    def _move_image_store(self, root):
+        available, missing = [], 0
+        for manifest in self._all_image_manifests():
+            try:
+                self._asset_store.read(manifest)
+                available.append(manifest)
+            except (OSError, ValueError):
+                missing += 1
+        self._asset_store = self._asset_store.copy_to(root, available)
+        self._image_archive_warning = ("%d historical image asset(s) are missing or changed; their records are retained." % missing) if missing else ""
+
+    def _persist_images(self):
+        destination = self._history.current_path()
+        root = vision.asset_root(destination) if destination else None
+        if root is not None and self._asset_store.root != root:
+            self._move_image_store(root)
+        epoch = self._history._scene_state().get("epoch", 0)
+        hou._houlm_visual_assets = (epoch, self._asset_store)
+        self.transcript._image_loader = self._asset_store.read
+
+    def _prepare_image_save(self):
+        try:
+            self._persist_images()
+            return True
+        except (OSError, ValueError) as error:
+            self._history._set_error("write_failed")
+            self._history_notice()
+            self.status.setText("Image history was not saved: " + str(error))
+            return False
+
+    def _capture_viewport(self, call):
+        if call["id"] in self._capture_receipts:
+            return copy.deepcopy(self._capture_receipts[call["id"]])
+        result = None
+        if not self.allow_viewport_capture.isChecked():
+            result = self._edit_result(call, {"success": False, "status": "not_permitted", "message": "Viewport capture permission is off. No image was captured."})
+        elif self._capture_count >= 3:
+            result = self._edit_result(call, {"success": False, "status": "limit_reached", "message": "The three-capture limit is reached. Report remaining visual differences and stop visual refinement."})
+        else:
+            self._capture_count += 1
+            try:
+                frame = float(hou.frame())
+                data, mime, width, height, metadata = vision_ui.capture_viewport()
+                if not self.allow_viewport_capture.isChecked():
+                    raise ValueError("Viewport access was turned off during capture. No image was sent.")
+                if float(hou.frame()) != frame:
+                    raise ValueError("The frame changed during capture. No image was sent.")
+                metadata["frame"] = frame
+                manifest = self._asset_store.add(data, mime, width, height, name="Current-frame viewport", kind="capture", metadata=metadata)
+                result = self._edit_result(call, {"success": True, "status": "completed", "attachment_id": manifest["id"], "metadata": metadata,
+                    "message": "Captured the selected viewport using Houdini's native single-frame flipbook at the current frame. Current-frame evaluation was requested and may have cooked the scene. This is viewport output, not final Karma quality."})
+                result["attachments"] = [manifest]
+                self.transcript._image_loader = self._asset_store.read
+                self.transcript.append_image(manifest)
+            except (OSError, RuntimeError, ValueError, AttributeError) as error:
+                result = self._edit_result(call, {"success": False, "status": "unavailable", "message": str(error)[:400]})
+        self._capture_receipts[call["id"]] = copy.deepcopy(result)
+        return result
+
     def _setup_history(self):
         self._history = conversations.Conversations(hou)
         self._restore_history()
@@ -516,10 +679,10 @@ class AssistantPanel(QtWidgets.QWidget):
             def callback():
                 widget = reference()
                 if widget is not None:
-                    getattr(widget, name)()
+                    return getattr(widget, name)()
             return callback
         self._history.listen(invoke("_before_scene_switch"), invoke("_after_scene_switch"),
-                             invoke("_checkpoint"), invoke("_history_notice"))
+                             invoke("_checkpoint"), invoke("_history_notice"), prepare_assets=invoke("_prepare_image_save"))
         # The native host may delete the child without closeEvent. No HIP or
         # node callbacks may retain a dead/reloaded QObject.
         history, context = self._history, self._context
@@ -546,8 +709,10 @@ class AssistantPanel(QtWidgets.QWidget):
             text += " · Choose the saved model or start New chat to use this connection."
         if self._omitted_messages or self._compacted_tool_results:
             text += " · Full history retained; older context shortened for this request."
+        if self._image_archive_warning:
+            text += " · " + self._image_archive_warning
         self._history_status_text = text
-        self.history_status.setText("Log !" if self._history.error else "Log")
+        self.history_status.setText("Log !" if self._history.error or self._image_archive_warning else "Log")
         self.history_status.setAccessibleName("Chat history: " + text)
         self.history_status.setToolTip(text + ("\n" + str(self._history.path) if self._history.path else "") + "\nClick for the file location and save details.")
         self.history_status.setProperty("saved", self._history.saved and not self._history.error)
@@ -631,6 +796,7 @@ class AssistantPanel(QtWidgets.QWidget):
         history = self._messages if history is None else history
         item.update(messages=copy.deepcopy(history), transcript=list(self.transcript._parts),
                     commands=self.transcript.export_commands(),
+                    draft_attachments=copy.deepcopy(self._reference_images),
                     draft=self.prompt.toPlainText() or self._pending_prompt,
                     scene_context=self._context.export(),
                     turn_state="review" if self._pending_review else "working" if self._reply is not None or self._agent_history is not None else "interrupted" if self._resume_note else "idle")
@@ -639,6 +805,8 @@ class AssistantPanel(QtWidgets.QWidget):
         if self.models.currentData() and not item.get("model"):
             item["model"] = self.models.currentData()
         item.setdefault("scene_access", self.scene_tools.isChecked())
+        if not self._prepare_image_save():
+            return
         self._history.save()
         self._history_notice()
 
@@ -652,6 +820,7 @@ class AssistantPanel(QtWidgets.QWidget):
             item = self._history.active
             self._messages = copy.deepcopy(item.get("messages", []))
             self.transcript._parts = list(item.get("transcript", []))
+            self._bind_images()
             self.transcript.set_commands(item.get("commands", []))
             self.prompt.setPlainText(item.get("draft", ""))
             self._context.restore(item.get("scene_context", {}))
@@ -683,6 +852,7 @@ class AssistantPanel(QtWidgets.QWidget):
         self._history_bound = False
         self._abort()
         self._context.restore({})
+        self.allow_viewport_capture.setChecked(False)
 
     def _after_scene_switch(self):
         self._restore_history()
@@ -1115,6 +1285,8 @@ class AssistantPanel(QtWidgets.QWidget):
             and self._route_matches()
         )
         self.prompt.setEnabled(not busy)
+        self.attach_button.setEnabled(not busy)
+        self.image_strip.setEnabled(not busy)
         self.include_selection.setEnabled(not busy)
         self.auto_run_commands.setEnabled(self.scene_tools.isChecked())
         for suggestion in self.suggestion_buttons:
@@ -1547,7 +1719,8 @@ class AssistantPanel(QtWidgets.QWidget):
         if generation != self._generation or self._agent_history is None:
             return
         try:
-            fresh_results = toolchat.execute_calls(hou, reads[:1])
+            fresh_results = ([self._capture_viewport(reads[0])] if reads[0]["function"]["name"] == "houlm_capture_viewport"
+                             else toolchat.execute_calls(hou, reads[:1]))
             results.extend(fresh_results)
             for call, result in zip(reads[:1], fresh_results):
                 self._context.observe_tool(call, result)
@@ -1856,7 +2029,7 @@ class AssistantPanel(QtWidgets.QWidget):
         except core.RequestSizeError:
             self._failed("This request still exceeds the local size limit after reducing older context. The full history is retained. Shorten the current prompt or attach less selected-node text.")
             return
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OSError):
             self._failed("The conversation could not be prepared because its messages or tool results are invalid or incomplete. The full history is retained; no additional commands were run.")
             return
         self._agent_rounds += 1
@@ -1977,6 +2150,8 @@ class AssistantPanel(QtWidgets.QWidget):
         self._clear_error_details()
         self._clear_edit_details()
         self._messages = []
+        self._reference_images = []
+        self._refresh_image_strip()
         self.transcript.clear()
         self.prompt.clear()
         self._context.restore({})
@@ -2024,6 +2199,8 @@ class AssistantPanel(QtWidgets.QWidget):
             options["scene_context"] = context
             options["resume_notice"] = self._resume_note
             options["auto_run_commands"] = self.auto_run_commands.isChecked()
+            options["allow_viewport_capture"] = self.allow_viewport_capture.isChecked()
+            options["captures_remaining"] = max(0, 3 - self._capture_count)
             # The first payload is built before the previous turn's counters
             # are reset. Continuing turns use the full local execution count,
             # independent of which messages fit into the outgoing context.
@@ -2034,6 +2211,7 @@ class AssistantPanel(QtWidgets.QWidget):
             def builder(window, notice):
                 return core.build_chat_payload(model_id, window, context_notice=notice)
         payload, stats = request_context.fit(messages, builder, max_messages=240 if agent else 98)
+        payload = vision.enrich_payload(payload, messages, self._asset_store, references=self._reference_images)
         self._omitted_messages = stats["omitted_messages"]
         self._compacted_tool_results = stats["compacted_tool_results"]
         self._history_notice()
@@ -2061,14 +2239,19 @@ class AssistantPanel(QtWidgets.QWidget):
             except Exception:
                 self.status.setText("Could not capture selected node text. No request was sent.")
                 return
-        candidate = self._messages + [{"role": "user", "content": content}]
+        user_message = {"role": "user", "content": content}
+        if self._reference_images:
+            user_message["attachments"] = copy.deepcopy(self._reference_images)
+        candidate = self._messages + [user_message]
+        self._capture_count = 0
+        self._capture_receipts = {}
         try:
             payload = self._build_payload(model_id, candidate, agent=self.scene_tools.isChecked(),
                                           **({"turn_budget": self._turn_budget(new_turn=True), "current_turn_tool_count": 0} if self.scene_tools.isChecked() else {}))
         except core.RequestSizeError:
             self.status.setText("The current prompt or selected-node text is too large for one request. Shorten it or disable attachments in Nodes; your full chat is retained.")
             return
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OSError):
             self.status.setText("Could not prepare this conversation: its messages or tool results are invalid or incomplete. No request was sent.")
             return
         self._pending_messages = candidate
@@ -2086,6 +2269,9 @@ class AssistantPanel(QtWidgets.QWidget):
         self._generation += 1
         suffix = " [selected node text included]" if self.include_selection.isChecked() else ""
         self.transcript.appendPlainText("You" + suffix + ":\n" + prompt + "\n")
+        self.transcript._image_loader = self._asset_store.read
+        for manifest in self._reference_images:
+            self.transcript.append_image(manifest)
         self.prompt.clear()
         if self.scene_tools.isChecked():
             self._agent_history = list(candidate)

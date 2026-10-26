@@ -23,11 +23,12 @@ RUNTIME_MODULES = (
     "conversations", "core", "credentials", "discovery", "edits", "history_store",
     "homhelp", "inspection", "node_paths", "node_ui", "panel", "panel_host",
     "python_actions", "request_context", "scene", "stream_diagnostics", "toolchat",
-    "transcript",
+    "transcript", "vision", "vision_ui",
 )
 FILES = {
     "packaging/houdini/hou-lm.json": "hou-lm.json",
     "docs/package-install.md": "hou-lm/README.md",
+    "docs/visual-reference.md": "hou-lm/visual-reference.md",
     "LICENSE": "hou-lm/LICENSE",
     "scripts/launch_houdini.py": "hou-lm/scripts/launch_houdini.py",
     "scripts/reload_houdini.py": "hou-lm/scripts/reload_houdini.py",

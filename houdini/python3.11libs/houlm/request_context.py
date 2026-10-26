@@ -113,6 +113,9 @@ def _units(messages):
     """Validate the entire archive before any size-based removal can hide it."""
     if not isinstance(messages, list) or not messages:
         raise ValueError("Invalid conversation history.")
+    from . import vision
+    for message in messages:
+        vision.validate_message(message)
     units, used, index = [], set(), 0
     while index < len(messages):
         message = messages[index]

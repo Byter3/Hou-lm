@@ -14,6 +14,8 @@ from pathlib import Path
 import tempfile
 import uuid
 
+from . import vision
+
 
 SCHEMA_VERSION = 1
 _ERRORS = {
@@ -110,7 +112,15 @@ def _validate(document):
                                                 for field in ("id", "title", "source", "status"))
                     or type(command.get("result_text", "")) is not str):
                 raise StoreError("invalid")
+        try:
+            vision.validate_attachments(conversation.get("draft_attachments", []), kind="reference", limit=3)
+        except ValueError as exc:
+            raise StoreError("invalid") from exc
         for message in conversation["messages"]:
+            try:
+                vision.validate_message(message)
+            except ValueError as exc:
+                raise StoreError("invalid") from exc
             if (type(message) is not dict or message.get("role") not in ("user", "assistant", "tool")
                     or ("content" in message and message["content"] is not None
                         and type(message["content"]) is not str)):

@@ -69,7 +69,7 @@ class NodeUiTests(unittest.TestCase):
             widget.close()
             widget.deleteLater()
 
-    def test_paste_is_plain_text_and_file_image_pastes_are_blocked(self):
+    def test_paste_is_plain_text_and_images_use_separate_attachment_signal(self):
         widget = node_ui.PromptEdit(hou_module=self.hou)
         try:
             mime = QtCore.QMimeData()
@@ -77,7 +77,14 @@ class NodeUiTests(unittest.TestCase):
             mime.setHtml("<img src='file:///secret'>")
             widget.insertFromMimeData(mime)
             self.assertEqual(widget.toPlainText(), "<script>nothing()</script>")
+            attachments = []
+            widget.imageAttached.connect(attachments.append)
             mime.setImageData(QtGui.QImage(1, 1, QtGui.QImage.Format_RGB32))
+            self.assertTrue(widget.canInsertFromMimeData(mime))
+            widget.insertFromMimeData(mime)
+            self.assertEqual(len(attachments), 1)
+            self.assertEqual(widget.toPlainText(), "<script>nothing()</script>")
+            mime.setUrls([QtCore.QUrl("https://example.invalid/image.png")])
             self.assertFalse(widget.canInsertFromMimeData(mime))
         finally:
             widget.close()

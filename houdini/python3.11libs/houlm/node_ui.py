@@ -90,6 +90,7 @@ def focus_node(hou, url):
 
 class PromptEdit(QtWidgets.QPlainTextEdit):
     submitted = QtCore.Signal()
+    imageAttached = QtCore.Signal(object)
 
     def __init__(self, parent=None, *, hou_module=None):
         super(PromptEdit, self).__init__(parent)
@@ -147,6 +148,9 @@ class PromptEdit(QtWidgets.QPlainTextEdit):
         self._refresh_completions()
 
     def dragEnterEvent(self, event):
+        if self._image_mime(event.mimeData()):
+            event.acceptProposedAction()
+            return
         try:
             paths = dropped_paths(self._hou, event.mimeData()) if self._hou is not None else []
         except Exception:
@@ -159,6 +163,10 @@ class PromptEdit(QtWidgets.QPlainTextEdit):
     dragMoveEvent = dragEnterEvent
 
     def dropEvent(self, event):
+        if self._image_mime(event.mimeData()):
+            self._attach_images(event.mimeData())
+            event.acceptProposedAction()
+            return
         try:
             paths = dropped_paths(self._hou, event.mimeData()) if self._hou is not None else []
         except Exception:
@@ -171,9 +179,29 @@ class PromptEdit(QtWidgets.QPlainTextEdit):
         event.acceptProposedAction()
 
     def canInsertFromMimeData(self, source):
-        # Ordinary text paste remains available; attachments never do.
-        return source.hasText() and not source.hasUrls() and not source.hasImage()
+        return self._image_mime(source) or (source.hasText() and not source.hasUrls() and not source.hasImage())
 
     def insertFromMimeData(self, source):
-        if self.canInsertFromMimeData(source):
+        if self._image_mime(source):
+            self._attach_images(source)
+        elif self.canInsertFromMimeData(source):
             self.insertPlainText(source.text())
+
+    @staticmethod
+    def _image_mime(source):
+        if source.hasUrls():
+            urls = source.urls()
+            return bool(urls) and len(urls) <= 3 and all(
+                url.isLocalFile() and url.toLocalFile().lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
+                for url in urls)
+        return source.hasImage()
+
+    def _attach_images(self, source):
+        if source.hasUrls():
+            for url in source.urls():
+                self.imageAttached.emit(url.toLocalFile())
+        elif source.hasImage():
+            image = source.imageData()
+            if isinstance(image, QtGui.QPixmap):
+                image = image.toImage()
+            self.imageAttached.emit(image)
