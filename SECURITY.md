@@ -6,7 +6,8 @@ Hou-lm is an assistant inside the artist's Houdini process. General Python execu
 
 - The Open WebUI API key is stored separately from project history using Windows current-user DPAPI protection.
 - A HIP's `.houlm/<hip filename>.json` sidecar contains conversation text, tool results, commands, paths and scene observations. It is plain JSON, not encrypted.
-- Model requests send a bounded selection of conversation and scene text to the configured Open WebUI service and its selected model provider. A local sidecar does not imply local-only inference.
+- Model requests send a bounded selection of conversation and scene text to the configured Open WebUI service and its selected model provider. Active reference images and requested viewport captures are also sent when using image features. A local sidecar does not imply local-only inference.
+- Normalized images are saved in `.houlm/<hip filename>.json.assets` beside the history JSON. They may contain proprietary work; the asset folder is not encrypted. Viewport access is a separate session permission and starts off on every panel load. Native capture may evaluate the current frame.
 - Error diagnostics report bounded status, timing and stream counters. Full histories and command receipts contain more detail and may include proprietary scene information.
 
 ## Failure behavior
@@ -17,4 +18,4 @@ The optional gateway adapter is version-checked and maintained in [studio-assist
 
 ## Reporting
 
-Use a private GitHub vulnerability report if the repository's **Security → Report a vulnerability** option is available. Otherwise, ask the maintainer for a private reporting channel without posting exploit details or credentials publicly. For ordinary bugs, use a sanitized reproduction and diagnostic counters. Never attach `.env`, credential exports, production HIPs or complete `.houlm` histories to a public issue.
+Use a private GitHub vulnerability report if the repository's **Security → Report a vulnerability** option is available. Otherwise, ask the maintainer for a private reporting channel without posting exploit details or credentials publicly. For ordinary bugs, use a sanitized reproduction and diagnostic counters. Never attach `.env`, credential exports, production HIPs, reference/capture images or complete `.houlm` histories to a public issue.

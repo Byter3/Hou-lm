@@ -1,38 +1,29 @@
-# Publishing Hou-lm
+# Release preparation
 
-The initial source checkpoint is marked `working-2026-10-15`. It includes the MIT license and public documentation. Runtime behavior is recorded in [the baseline guide](working-baseline.md).
+This guide is for maintainers. Artist instructions are in [Installation](package-install.md).
 
-## Before publishing source
+## Review the source
 
-1. Review `git status --short` and `git ls-files`. The published tree must exclude `.env`, credential exports, HIPs, `.houlm` histories, logs, screenshots, local backups and generated `dist/` archives.
-2. Check `git log --format=fuller -1` for the intended author identity. Public commits expose that metadata.
-3. Run the tests in [CONTRIBUTING](../CONTRIBUTING.md#run-tests). Record skips and distinguish local checks from hosted CI and live Houdini acceptance.
-4. For the first push only, create an empty GitHub repository with the desired visibility. Do not initialize a separate README or license; this checkout already contains them.
+1. Review the intended branch, `git status --short` and `git diff`. Keep runtime changes separate from documentation-only commits where practical. Preserve the `working-2026-10-15` baseline tag.
+2. Check tracked and newly added files for credentials, personal paths, HIPs, image assets, `.houlm` histories, logs, backups and generated archives. Ignore rules do not remove files already tracked.
+3. Check the intended author identity and remote before publishing.
+4. Run the [offline tests](../CONTRIBUTING.md#run-tests). Record results and skips separately from live Houdini acceptance.
+5. Complete the relevant [panel tests](houdini-panel-quickstart.md#test-auto-run-command-receipts-and-resume) and [visual tests](visual-reference.md#example-prompts) on a disposable scene. Do not publish a feature as tested while its acceptance run is still pending.
 
-## Push when ready
+## Build and inspect the package
 
-Replace `OWNER/REPOSITORY` with the repository you created. From this checkout:
+Choose the release version before building. Keep the runtime version, changelog, artifact name and release links consistent; do not replace an existing release asset with different contents under the same version.
 
 ```sh
-git remote add origin https://github.com/OWNER/REPOSITORY.git
-git push -u origin HEAD:main
-git push origin working-2026-10-15
+python scripts/package_houdini.py --output dist/Hou-lm-preview-houdini20.5.zip
 ```
 
-If `origin` already exists, inspect `git remote -v` and use the intended remote instead of adding another one. The first command only configures the remote; the push commands publish the source and baseline tag.
+The builder refuses to overwrite an existing file. Inspect the ZIP and verify `hou-lm/package-manifest.json` against its entries. The root must contain `hou-lm.json` beside `hou-lm/`. Only the allowlisted client, panel definition, launch/reload helpers, user guides and license belong in it.
 
-After pushing, verify the public file list and run the configured GitHub Actions workflow. Its Windows/Linux Python jobs skip unavailable Houdini Qt and platform-specific checks; they do not replace interactive validation. Gateway and LiteLLM adapter checks belong to the backend repository. Enable private vulnerability reporting if desired so the channel described in `SECURITY.md` is available.
+Test installation from the ZIP with one active Hou-lm registration. The installed package must work without the source checkout. Keep generated archives in ignored `dist/`; publish the built plug-in ZIP as the release asset, not GitHub's source archive.
 
-Describe the project as an early Windows/Houdini 20.5.445 release. Do not attach private diagnostic archives or claim that the client release establishes a reproducible server deployment. The optional server example is maintained separately in [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend).
+## Publish
 
-## Build the artist plug-in archive
+After the intended source and native acceptance checks are approved, commit the reviewed changes and push to the verified repository. Check the Windows/Linux CI results. Create the versioned release and attach the inspected ZIP, then update the README download link and remove source-only feature notices for features included in that release.
 
-Run `python scripts/package_houdini.py` from the reviewed checkout. The default output is `dist/Hou-lm-0.1.0-houdini20.5.zip`; `--output /path/to/package.zip` selects another output file. Check the archive entries and its `hou-lm/package-manifest.json` before attaching that ZIP to an authorized GitHub release.
-
-Alternatively, the **Tests** workflow is configured to build the same ZIP after its Windows and Linux test jobs pass. Download it from the successful run's **Artifacts** section. The upload retains the installable ZIP directly, without an outer archive. Verify the run and source revision; the configured job is not evidence that a hosted run has succeeded. Artifact upload does not publish a release, which remains a separate authorized action.
-
-The ZIP must contain `hou-lm.json` and the sibling `hou-lm` folder directly at its root. It contains the allowlisted client runtime, named panel definition, launch/reload helpers, installation guide and MIT license. Keep credentials, preferences, HIPs, `.houlm`, test fixtures, backups, server configuration and diagnostics out of this artifact. The installed client must not require the source checkout.
-
-Use [the package guide](package-install.md) for artist instructions and its read-only acceptance prompt. A successful archive build or offline suite does not establish interactive package discovery; record that check separately. Do not claim Houdini 21 or Qt6 compatibility from the current Houdini 20.5 package.
-
-GitHub's automatic source ZIP is a checkout, not the ready-to-copy plug-in archive. Publish the built ZIP as a release asset when release publication is authorized; keep `dist/` ignored in Git. Build the optional gateway source bundle from the [backend repository](https://github.com/Byter3/studio-assistant-backend) using its packaging instructions. Do not attach a backend artifact to a client release as though it were required for installation.
+The CI artifact is a build download, not a GitHub release. Publishing a client does not deploy the [shared backend](https://github.com/Byter3/studio-assistant-backend) or change a studio's service configuration.

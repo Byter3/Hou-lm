@@ -2,7 +2,7 @@
 
 Use Python 3.11. The supported interactive target is Windows Houdini 20.5.445 with its bundled PySide2. Keep changes to the panel separate from gateway or deployment changes so regressions can be isolated.
 
-This repository owns the Houdini client. After Effects integration belongs in the separate [Ae-lm project](https://github.com/Byter3/Ae-lm), currently a development scaffold. The server stack, optional gateway adapter and their checks belong in [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend). Read [project boundaries](docs/project-boundaries.md) before extracting shared client code or adding another application's tools.
+This repository owns the Houdini client. After Effects integration belongs in the separate [Ae-lm project](https://github.com/Byter3/Ae-lm), an unsigned CEP development preview. The server stack, optional gateway adapter and their checks belong in [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend). Read [project boundaries](docs/project-boundaries.md) before extracting shared client code or adding another application's tools.
 
 ## Source layout
 
@@ -56,9 +56,53 @@ python scripts/package_houdini.py
 
 This produces `dist/Hou-lm-0.1.0-houdini20.5.zip`, containing `hou-lm.json` beside the `hou-lm` client folder. Use `--output /path/to/package.zip` for another output file. The builder uses an explicit file allowlist and includes a SHA-256 manifest; it does not import Houdini, execute scene commands or contact a model. Keep generated archives out of commits.
 
-The **Tests** workflow is also configured to build and upload this installable ZIP after both Windows and Linux test jobs pass. Download it from that run's **Artifacts** section; it is uploaded as the ZIP itself, without an outer archive. Check the selected run's result before using its artifact. Configuring the job does not establish a passing hosted run, and it does not create a GitHub release.
+The **Tests** workflow builds and uploads the ZIP after the Windows and Linux jobs pass. Download it from a successful run's **Artifacts** section. Publishing a GitHub release is a separate step; see [release preparation](docs/publishing.md).
 
 The source `docs/package-install.md` is included as the archive's `hou-lm/README.md`, so its links must also work outside a checkout. Keep the `scripts/` and `houdini/` sibling layout intact: the existing launch and reload helpers resolve their paths from it. See [package installation](docs/package-install.md) for artist and studio deployment. The [backend repository](https://github.com/Byter3/studio-assistant-backend) builds its own separate gateway source artifact.
+
+## Launch a source checkout
+
+Replace `C:/path/to/Hou-lm` with your checkout's location. Run this **inside Houdini's Python Shell**, or from a Python shelf tool:
+
+```python
+import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/launch_houdini.py", run_name="__main__")
+```
+
+The command makes the interface available for this Houdini session. In the pane where you want the assistant, choose **+ → New Pane Tab Type → Hou-lm Assistant**. Look near the bottom of the pane-type menu for that named entry. Choose **Hou-lm Assistant**, rather than the generic **Misc → Python Panel** entry. The launcher does not automatically create a new tab; running it again focuses an existing assistant tab.
+
+The launcher queues UI work on Houdini's main thread. Do not call the panel's widget constructor directly from the Python Shell.
+
+## Load panel updates
+
+For plug-in releases, close Houdini and replace the installed package as described in [Upgrading](docs/package-install.md#upgrading). Restarting also loads changes to the panel definition and stable host.
+
+For development, leave the assistant pane open and run inside Houdini. With the copy-to-packages installation:
+
+```python
+import hou, runpy; _ = runpy.run_path(hou.expandString("$HOULM_ROOT/scripts/reload_houdini.py"), run_name="__main__")
+```
+
+With a source checkout:
+
+```python
+import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/reload_houdini.py", run_name="__main__")
+```
+
+The reloader replaces the assistant child widget while keeping the native pane in place. Saved login and conversation are retained; pending requests and actions are not replayed. Running the ordinary launcher only focuses the pane and does not reload imported modules.
+
+Changes to `hou_lm.pypanel` or `panel_host.py` require a Houdini restart. The reloader also reports when an older incompatible panel needs a restart.
+
+## Register a source checkout persistently
+
+This is an alternative to the copy-to-packages installation. Keep only one active Hou-lm registration. Run inside Houdini:
+
+```python
+import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/install_houdini.py", run_name="__main__")
+```
+
+The installer writes `$HOUDINI_USER_PREF_DIR/packages/hou-lm.json`, pointing to this checkout's `houdini` directory, and invokes the launcher. It refuses to replace an existing different registration. Open **Hou-lm Assistant** from the named pane entry and save your Houdini desktop layout if desired.
+
+Keep the checkout at that location, or update the package path after moving it. To uninstall, remove only that `hou-lm.json` package file and restart Houdini. These scripts do not install Python dependencies or modify the scene.
 
 ## Preserve behavior
 

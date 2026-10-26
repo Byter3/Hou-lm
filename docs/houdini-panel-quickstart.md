@@ -1,26 +1,14 @@
-# Houdini panel quickstart
+# Using the Houdini panel
 
 Hou-lm is a native, dockable assistant for an artist's open Houdini session. It uses your Open WebUI account and centrally configured models to inspect the scene, explain it, and perform requested changes. The supported target is **Windows, Houdini 20.5.445, Python 3.11 and bundled PySide2**. Other Houdini builds and platforms are not yet validated.
 
-You need the Hou-lm plug-in archive or a local source checkout, a reachable Open WebUI server, and an Open WebUI user API key with access to a model that supports tool calls. No local model installation or additional workstation service is required. See [connection and deployment requirements](houdini-connection.md) for the central setup.
+Install the [Houdini package](package-install.md) and connect to your studio service. For source-checkout launch and reload commands, see [Contributing](../CONTRIBUTING.md#launch-a-source-checkout). Reference images and viewport capture require the current source build; they are not included in the published v0.1.0 ZIP.
 
 ## Open the panel
 
 For a normal installation, extract `hou-lm.json` and the `hou-lm` folder from the plug-in ZIP into `$HOUDINI_USER_PREF_DIR/packages`, then restart Houdini. Choose **+ → New Pane Tab Type → Hou-lm Assistant**. No launch command is needed. Follow the [package installation guide](package-install.md) for the exact layout and replacing an older checkout registration.
 
 Use Houdini's normal split-pane and tab controls to dock the assistant where you want it. Save your desktop layout to retain the pane arrangement.
-
-### Development: launch a source checkout
-
-Replace `C:/path/to/Hou-lm` with your checkout's location. Run this **inside Houdini's Python Shell**, or from a Python shelf tool:
-
-```python
-import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/launch_houdini.py", run_name="__main__")
-```
-
-The command makes the interface available for this Houdini session. In the pane where you want the assistant, choose **+ → New Pane Tab Type → Hou-lm Assistant**. Look near the bottom of the pane-type menu for that named entry. Choose **Hou-lm Assistant**, rather than the generic **Misc → Python Panel** entry. The launcher does not automatically create a new tab; running it again focuses an existing assistant tab.
-
-The launcher queues UI work on Houdini's main thread. Do not call the panel's widget constructor directly from the Python Shell.
 
 ## Connect
 
@@ -40,7 +28,9 @@ After a successful connection, Windows stores the key encrypted with current-use
 | Control | Behavior |
 | --- | --- |
 | **Scene** | Enables tools for the open Houdini session. Starts enabled. Turning it off starts a text-only conversation. |
-| **Auto-run** | Runs prepared Python and typed scene edits without an Apply popup. Starts off and persists as a local preference. |
+| **Auto-run** | Runs prepared Python and typed scene edits without an Apply popup. Off by default; remembers your choice on this workstation. |
+| **Attach** | Adds image references by file picker; drag/drop and paste are also supported. References stay active until removed. |
+| **Viewport access** | Allows native current-frame viewport capture. Starts off on each panel load. Capture may cook; see [visual workflow](visual-reference.md). |
 | **Nodes** | Contains optional **Attach selected node details on send** and a local preview. **Nodes +** means the attachment is enabled. |
 | **+** in the header | Starts a new conversation; older conversations remain in History. |
 | **≡ History** | Browses saved conversations and the Changes journal; resumes a conversation without executing it. |
@@ -69,7 +59,7 @@ shots/
     shot_v002.hip.json
 ```
 
-Each JSON contains all conversations for that HIP version, saved messages and tool results, drafts, action records, and a bounded scene-context cache. **Save As** carries the full accumulated document into the new version's sidecar; later work updates the new file. Saving chat does not save HIP geometry.
+Each JSON contains conversations, tool results, drafts and action records for that HIP version. **Save As** carries the accumulated history into the new version's sidecar; later work updates the new file. Image assets live beside it in `<HIP filename>.json.assets`; keep that folder with the JSON. Saving chat does not save HIP geometry.
 
 Click **Log → Open folder** to find the exact location. A save failure changes the button to **Log !**. The path follows the HIP's actual location, including redirected Desktop or project folders. A saved file named `untitled.hip` is supported.
 
@@ -113,45 +103,12 @@ Set amplitude to 0.25 on /obj/HOULM_TEST/wave. Keep the network and other contro
 
 That change should execute without a review popup. Save the scene as `shot_v001.hip`, leave an unsent draft, and reload the panel: transcript, receipts and draft should return. Use **Save As** to create `shot_v002.hip` and confirm both history files exist through **Log**. Resuming history alone must not execute any command.
 
-## Load panel updates
-
-For plug-in releases, close Houdini and replace the installed package as described in [Upgrading](package-install.md#upgrading). Restarting also loads changes to the panel definition and stable host.
-
-For development, leave the assistant pane open and run inside Houdini. With the copy-to-packages installation:
-
-```python
-import hou, runpy; _ = runpy.run_path(hou.expandString("$HOULM_ROOT/scripts/reload_houdini.py"), run_name="__main__")
-```
-
-With a source checkout:
-
-```python
-import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/reload_houdini.py", run_name="__main__")
-```
-
-The reloader replaces the assistant child widget while keeping the native pane in place. Saved login and conversation are retained; pending requests and actions are not replayed. Running the ordinary launcher only focuses the pane and does not reload imported modules.
-
-Changes to `hou_lm.pypanel` or `panel_host.py` require a Houdini restart. The reloader also reports when an older incompatible panel needs a restart.
-
-## Development: register a source checkout persistently
-
-This is an alternative to the copy-to-packages installation. Keep only one active Hou-lm registration. Run inside Houdini:
-
-```python
-import runpy; _ = runpy.run_path(r"C:/path/to/Hou-lm/scripts/install_houdini.py", run_name="__main__")
-```
-
-The installer writes `$HOUDINI_USER_PREF_DIR/packages/hou-lm.json`, pointing to this checkout's `houdini` directory, and invokes the launcher. It refuses to replace an existing different registration. Open **Hou-lm Assistant** from the named pane entry and save your Houdini desktop layout if desired.
-
-Keep the checkout at that location, or update the package path after moving it. To uninstall, remove only that `hou-lm.json` package file and restart Houdini. These scripts do not install Python dependencies or modify the scene.
-
 ## Troubleshooting
 
 | Symptom | Next step |
 | --- | --- |
 | Installed package has no named pane entry | Confirm `hou-lm.json` is directly inside `packages` beside `hou-lm/`, restart Houdini, and check the supported Python/PySide2 build. See [package installation](package-install.md). |
-| Launcher prints a message but no pane opens | Choose **+ → New Pane Tab Type → Hou-lm Assistant**. |
-| Updated files have no visible effect | Use the reload command; relaunching only focuses the existing pane. |
+| Updated files have no visible effect | Restart after replacing an installed package; source developers can use the [reload helper](../CONTRIBUTING.md#load-panel-updates). |
 | No history file | Save the HIP, then open **Log** for the actual path or save error. |
 | Text answer claims fresh inspection but no tools ran | Expand the receipt. Ask explicitly for a fresh scene-tool read; an attached snapshot or older history may be its source. |
 | Request fails or waits for data | Open **Error details** and follow [stream troubleshooting](tool-stream-troubleshooting.md). A successful browser chat alone does not test the panel's tool flow. |
