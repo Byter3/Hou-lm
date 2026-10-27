@@ -1,13 +1,11 @@
-# Connect to the studio service
+# Shared backend
 
-Hou-lm connects to an Open WebUI base URL using the artist's Open WebUI user API key. The selected model must support tool calls; reference images and viewport comparisons also require image input.
+Use [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend) for deployment and model routing:
 
-If your studio already has a working service, use it. No backend checkout or provider/master key is needed on the artist workstation. Follow [Connect](houdini-panel-quickstart.md#connect) to configure the panel.
+- [Setup and artist access](https://github.com/Byter3/studio-assistant-backend/blob/main/docs/server-setup.md)
+- [Existing-stack updates](https://github.com/Byter3/studio-assistant-backend/blob/main/docs/migration.md)
+- [Optional streaming adapter](https://github.com/Byter3/studio-assistant-backend/blob/main/gateway/README.md)
 
-Studio administrators can use the separate [studio-assistant-backend repository](https://github.com/Byter3/studio-assistant-backend):
+Clients need only the Open WebUI base URL and user API key. An existing compatible service is sufficient; installing a client does not require redeployment.
 
-- [Server setup](https://github.com/Byter3/studio-assistant-backend/blob/main/docs/server-setup.md): optional Open WebUI, LiteLLM, Ollama and PostgreSQL deployment.
-- [Existing stacks](https://github.com/Byter3/studio-assistant-backend/blob/main/docs/migration.md): preserve stack names, volumes and private configuration during updates.
-- [Gateway adapter](https://github.com/Byter3/studio-assistant-backend/blob/main/gateway/README.md): optional LiteLLM stream compatibility support.
-
-Client installation does not require rebuilding or restarting the server. For failed model requests, see [response troubleshooting](tool-stream-troubleshooting.md).
+[Hou-lm connection](houdini-panel-quickstart.md#connect) · [Ae-lm installation](https://github.com/Byter3/Ae-lm/blob/main/docs/install.md)

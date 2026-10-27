@@ -1,56 +1,33 @@
-# Reference images and viewport capture
+# Visual workflow
 
-These features are available in the current source build. They are not included in the published v0.1.0 ZIP. Use a model route that supports both image input and tool calls.
+Use a vision/tool-capable model from the [shared backend](https://github.com/Byter3/studio-assistant-backend). These features require the current source build; published v0.1.0 predates them.
 
-## Attach a reference
+## References
 
-Click **Attach**, drop an image into the prompt, or paste an image. You can attach up to three PNG, JPEG or WebP files.
+**Attach**, drop or paste up to three PNG/JPEG/WebP images. References remain active for follow-ups until removed; New chat clears them. Model copies are limited to 1280 pixels/512 KiB, without modifying originals.
 
-References stay in the composer for follow-up messages. Remove a thumbnail to stop sending it, or start a new chat to clear active references. Source images are unchanged; the model receives a copy with metadata removed, reduced to at most 1280 pixels on its longest edge and 512 KiB. Documents and project files are not supported attachments.
+## Viewport feedback
 
-## Let the assistant inspect its work
+Enable **Scene** and **Viewport access**. Keep one Scene Viewer visible; in split views, select the intended viewport. Detection is automatic, including Context View wrappers.
 
-1. Keep the intended Scene Viewer visible. If several Scene Viewers are visible, leave just the one you want to capture visible.
-2. Enable **Scene** and **Viewport access**. In a split Scene Viewer, select the intended viewport in Houdini.
-3. Ask for a capture or a comparison with your reference.
+Capture uses a native single-frame flipbook: **current-frame evaluation/cooking is possible**. No MPlay, simulation initialization, frame-range playback or desktop capture. Saved flipbook settings are preserved.
 
-The selected viewport is found automatically, including inside a Context View. There is no screen-region picker. Each capture appears in an expandable image card in the conversation.
-
-Capture uses Houdini's native single-frame flipbook at the current frame. **It may evaluate or cook that frame.** It does not open MPlay, initialize simulations, play a frame range or capture the desktop. Your saved flipbook settings are preserved.
-
-For Solaris, progressive-render waiting is limited to five seconds. This does not limit cooking time, and the image may still be converging. A viewport preview is not final-render verification. If your task forbids all cooking or evaluation, leave viewport access off.
-
-Viewport access starts off whenever the panel loads and is independent of **Auto-run**. It grants capture access; edits still follow the command-review setting. A turn allows up to three capture attempts. Continue with a follow-up message for further refinement.
+Solaris progressive waiting is limited to five seconds, not total cook time. The preview may be unconverged. Capture permission resets off on panel load; a turn permits three attempts. Follow up for further refinement.
 
 ## Example prompts
 
-To check image input, attach a reference and send:
+Capture only:
 
-> Describe the attached image's composition, colors and proportions. Do not use scene tools or modify anything. If the image is unavailable, say so.
+> Capture the selected viewport and describe the image. Current-frame evaluation is allowed. Do not edit nodes, change frames or start a final render.
 
-To check capture:
+With a reference:
 
-> Capture my selected viewport once and describe what you see. Current-frame evaluation is allowed. Do not modify nodes, change frames, initialize simulations or start a final render.
+> Match the reference's composition and proportions while keeping the scene procedural. Inspect, edit, capture and correct the largest differences within the capture budget. Current-frame evaluation is allowed; no frame changes, simulations or final render.
 
-To compare without editing:
+Expand the capture card to inspect the actual image. For ambiguity, leave one Scene Viewer visible; for an empty grid, check display flags and framing.
 
-> Compare my current viewport with the attached reference. Identify the three largest differences in composition and proportions. Current-frame evaluation is allowed; do not edit the scene or start a final render.
+## Storage
 
-To refine a scene:
+Keep `.houlm/<HIP>.json.assets` with its JSON. Save As carries assets forward. Only active references and the current turn's latest capture are sent; older captures remain local.
 
-> Use the attached reference to improve this scene's composition and proportions while keeping it procedural. Inspect the relevant nodes first, then make focused changes. Capture the result and correct the largest remaining differences within the available capture budget. Current-frame evaluation is allowed. Do not change frames, initialize simulations or start a final render. Report any differences you could not resolve.
-
-## Save and resume
-
-Images are saved in `.houlm/<HIP filename>.json.assets` beside the conversation JSON. Keep both when moving history. **Save As** copies the referenced assets with the history. Unsaved scenes keep images only in memory until the HIP is saved.
-
-The model receives active references and the latest capture from the current turn. Older captures remain in local history without being resent on every later turn. Missing or unreadable assets produce an error; reattach the reference if needed.
-
-## Troubleshooting
-
-- **No Scene Viewer found:** open a Scene Viewer and keep it visible.
-- **More than one candidate:** leave one Scene Viewer visible, then retry.
-- **The wrong split view is captured:** select the desired viewport in Houdini before asking again.
-- **Only the grid is visible:** check the displayed geometry, visibility and framing in the selected viewport.
-- **Capture fails or the model cannot see the image:** expand the capture receipt and check that the chosen model route accepts images. Do not treat the assistant's description alone as proof of a successful capture.
-- **Capture takes a long time:** native evaluation may be waiting on the scene. Test with a simple scene before using it on a heavy setup.
+[Panel reference](https://github.com/Byter3/Hou-lm/blob/main/docs/houdini-panel-quickstart.md) · [Ae-lm visual workflow](https://github.com/Byter3/Ae-lm/blob/main/docs/visual-workflow.md) · [Data handling](https://github.com/Byter3/Hou-lm/blob/main/SECURITY.md)

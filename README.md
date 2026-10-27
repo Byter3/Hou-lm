@@ -1,54 +1,44 @@
 # Hou-lm
 
-A Houdini assistant for studios. Inspect scenes, build procedural networks and run Houdini Python through a dockable chat panel connected to your studio's Open WebUI service.
+**Houdini client for [studio-assistant-backend](https://github.com/Byter3/studio-assistant-backend).** [Backend setup](https://github.com/Byter3/studio-assistant-backend/blob/main/docs/server-setup.md) · [After Effects client](https://github.com/Byter3/Ae-lm)
 
-**Windows · Houdini 20.5.445 · Python 3.11 / PySide2 · Early release**
+Conversational scene inspection, Python/HOM editing and reference-driven viewport feedback. **Windows · Houdini 20.5.445 · Python 3.11 / PySide2.**
+
+## Shared backend
+
+```mermaid
+flowchart TB
+    subgraph clients["Artist workstation"]
+        H["Hou-lm · Houdini"]
+        A["Ae-lm · After Effects"]
+    end
+    subgraph backend["studio-assistant-backend"]
+        W["Open WebUI · accounts and API"]
+        G["LiteLLM · model routing"]
+        W <--> G
+    end
+    H <--> W
+    A <--> W
+    G <--> L["Local models · Ollama"]
+    G <--> C["Cloud models"]
+```
+
+Clients send context, images and tool results through the service. Commands execute locally in Houdini or AE. An existing compatible Open WebUI service works too.
 
 ## Install
 
-1. Download the [Hou-lm plug-in ZIP](https://github.com/Byter3/Hou-lm/releases/download/v0.1.0/Hou-lm-0.1.0-houdini20.5.zip).
-2. Close Houdini. Extract **both** `hou-lm.json` and the `hou-lm` folder into `$HOUDINI_USER_PREF_DIR/packages`.
-3. Start Houdini and choose **+ → New Pane Tab Type → Hou-lm Assistant**.
-4. Open **Connections** (the sliders icon), enter your Open WebUI base URL and user API key, then connect and choose a model.
+1. Extract the [plug-in ZIP](https://github.com/Byter3/Hou-lm/releases/download/v0.1.0/Hou-lm-0.1.0-houdini20.5.zip) into `$HOUDINI_USER_PREF_DIR/packages`: `hou-lm.json` beside `hou-lm/`.
+2. Restart Houdini; open **+ → New Pane Tab Type → Hou-lm Assistant**.
+3. In **Connections**, supply the Open WebUI base URL and user API key; select a tool-capable model.
 
-No extra Python packages or local server are needed. Your model must support tool calls. See [installation](docs/package-install.md) for the folder layout, upgrades and studio distribution.
+The published v0.1.0 ZIP predates image features. [Build current source](CONTRIBUTING.md#build-the-houdini-plug-in) for those. No additional Python dependencies.
 
-The release link above is **v0.1.0**. Reference images and viewport capture described below are in the current source and are not included in that published ZIP. To try those features before the next release, [build a package from source](CONTRIBUTING.md#build-the-houdini-plug-in).
+## Use
 
-## Use it
+**Ctrl+Enter** sends. Drag nodes or use `@`. **Auto-run** skips command review; expand receipts for exact source/results. **Attach** adds image references; **Viewport access** enables native current-frame capture, which may cook. Use a vision-capable model for images.
 
-Describe your task and press **Ctrl+Enter**. Drag nodes into the prompt or type `@` to reference them.
+History saves to `.houlm/<HIP>.json` with adjacent `.json.assets`; Save As carries it forward.
 
-- **Scene** lets the assistant inspect and edit the current Houdini session.
-- **Auto-run** allows commands without an Apply popup. Leave it off to review changes first.
-- **Attach** adds reference images. **Viewport access** lets the assistant capture the current viewport and compare its work with the reference. This requires a model that accepts images.
-- Expand **Tool Activity** or **Inspect commands** to see observations, exact commands and their results.
-- **History** resumes conversations; **Log** opens the HIP-associated history location.
+> Inspect /obj and report its immediate children. Do not modify anything or force a cook.
 
-Start with:
-
-> Use scene tools to list the immediate children of /obj. Report their names and types. Do not modify anything or force a cook.
-
-Routine inspection reads authored values and existing diagnostics. Native viewport capture may evaluate or cook the current frame. Model-written Python runs inside Houdini with your process permissions; an error can leave partial changes. See [execution and recovery](docs/agent-execution.md).
-
-## Conversations and images
-
-Save the HIP to keep conversations automatically in `.houlm/<HIP filename>.json` beside it. **Save As** carries the accumulated history into the new version. Image assets are stored beside the JSON; keep them together when moving a project. Unsaved scenes retain history only for the current Houdini process.
-
-The full archive stays local; each model request uses a bounded working context. Relevant scene information, active references and requested captures go to your configured service and model provider. Restoring history never replays commands. See [data handling](SECURITY.md).
-
-## Guides
-
-| Guide | Use it for |
-| --- | --- |
-| [Installation](docs/package-install.md) | Packages folder, updates, uninstall and studio deployment |
-| [Using the panel](docs/houdini-panel-quickstart.md) | Controls, login, history and example prompts |
-| [Images and viewport capture](docs/visual-reference.md) | Reference-based work and visual checks |
-| [Troubleshooting](docs/tool-stream-troubleshooting.md) | Connection and response errors |
-| [Contributing](CONTRIBUTING.md) | Source launch, reload, tests and package builds |
-
-[Studio assistant backend](https://github.com/Byter3/studio-assistant-backend) provides optional Open WebUI/LiteLLM deployment examples. [Ae-lm](https://github.com/Byter3/Ae-lm) is the companion After Effects assistant. Each client installs independently and works on its own application session. An existing Open WebUI service can serve both clients.
-
-## License
-
-[MIT](LICENSE). Independent project, not an official SideFX product. Houdini and model/server dependencies have their own licenses.
+[Install/update](docs/package-install.md) · [Controls](docs/houdini-panel-quickstart.md) · [Visual workflow](docs/visual-reference.md) · [Troubleshooting](docs/tool-stream-troubleshooting.md) · [Development](CONTRIBUTING.md) · [Security](SECURITY.md) · [MIT](LICENSE)
