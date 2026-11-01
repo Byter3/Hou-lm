@@ -4,7 +4,7 @@ Houdini client for the [studio assistant backend](https://github.com/Byter3/stud
 
 ## Install
 
-1. Download the [plug-in ZIP](https://github.com/Byter3/Hou-lm/releases/download/v0.1.0/Hou-lm-0.1.0-houdini20.5.zip), or [build current source](https://github.com/Byter3/Hou-lm/blob/main/CONTRIBUTING.md#build-the-houdini-plug-in). Published v0.1.0 predates image/capture features.
+1. Download the [v0.2.0 plug-in ZIP](https://github.com/Byter3/Hou-lm/releases/download/v0.2.0/Hou-lm-0.2.0-houdini20.5.zip), including reference images and native viewport capture.
 2. With Houdini closed, extract into `$HOUDINI_USER_PREF_DIR/packages`:
 
    ```text

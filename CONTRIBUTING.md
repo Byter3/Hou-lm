@@ -29,7 +29,7 @@ Offline tests use synthetic data and loopback fixtures. Missing Qt/platform depe
 python scripts/package_houdini.py
 ```
 
-Output: `dist/Hou-lm-0.1.0-houdini20.5.zip`. Use `--output PATH` for a new filename; existing archives are not overwritten. The allowlisted ZIP includes checksums. CI builds it after the test jobs pass.
+Output: `dist/Hou-lm-0.2.0-houdini20.5.zip`. Use `--output PATH` for a new filename; existing archives are not overwritten. The allowlisted ZIP includes checksums. CI builds it after the test jobs pass.
 
 `docs/package-install.md` becomes the packaged README, so keep its links valid outside a checkout. [Release checklist](docs/publishing.md).
 

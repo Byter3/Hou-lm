@@ -68,7 +68,7 @@ class HoudiniPackageTests(unittest.TestCase):
             manifest_name = "hou-lm/package-manifest.json"
             manifest = json.loads(archive.read(manifest_name))
             self.assertEqual(manifest["schema_version"], 1)
-            self.assertEqual(manifest["version"], "0.1.0")
+            self.assertEqual(manifest["version"], "0.2.0")
             self.assertEqual(manifest["target"],
                              {"houdini": "20.5", "python": "3.11", "qt": "PySide2"})
             self.assertEqual(set(manifest["files"]), set(archive.namelist()) - {manifest_name})

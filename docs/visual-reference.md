@@ -1,6 +1,6 @@
 # Visual workflow
 
-Use a vision/tool-capable model from the [shared backend](https://github.com/Byter3/studio-assistant-backend). These features require the current source build; published v0.1.0 predates them.
+Use a vision/tool-capable model from the [shared backend](https://github.com/Byter3/studio-assistant-backend). Reference images and native capture are included in [v0.2.0](https://github.com/Byter3/Hou-lm/releases/tag/v0.2.0).
 
 ## References
 

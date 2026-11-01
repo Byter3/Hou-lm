@@ -27,11 +27,11 @@ Clients send context, images and tool results through the service. Commands exec
 
 ## Install
 
-1. Extract the [plug-in ZIP](https://github.com/Byter3/Hou-lm/releases/download/v0.1.0/Hou-lm-0.1.0-houdini20.5.zip) into `$HOUDINI_USER_PREF_DIR/packages`: `hou-lm.json` beside `hou-lm/`.
+1. Extract the [plug-in ZIP](https://github.com/Byter3/Hou-lm/releases/download/v0.2.0/Hou-lm-0.2.0-houdini20.5.zip) into `$HOUDINI_USER_PREF_DIR/packages`: `hou-lm.json` beside `hou-lm/`.
 2. Restart Houdini; open **+ → New Pane Tab Type → Hou-lm Assistant**.
 3. In **Connections**, supply the Open WebUI base URL and user API key; select a tool-capable model.
 
-The published v0.1.0 ZIP predates image features. [Build current source](CONTRIBUTING.md#build-the-houdini-plug-in) for those. No additional Python dependencies.
+The v0.2.0 package includes reference images and native viewport capture. No additional Python dependencies.
 
 ## Use
 

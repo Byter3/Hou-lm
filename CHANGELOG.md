@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 1 November 2026
 
 - Reference image picker, drag/drop and paste, with persistent removable thumbnails for follow-ups.
 - Separate session-only viewport permission, automatic native Scene Viewer identification and bounded visual feedback. Capture now uses Houdini's native single-frame flipbook at the current frame and may cook the scene; it does not open MPlay, initialize simulations or capture desktop pixels.
