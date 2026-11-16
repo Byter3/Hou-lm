@@ -55,3 +55,8 @@ coverage.xml
 .idea/
 .DS_Store
 Thumbs.db
+
+# Social post drafts and promotional assets stay local.
+/docs/social/
+**/linkedin-post.*
+**/studio-assistant-linkedin.*
