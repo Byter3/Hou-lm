@@ -6,22 +6,9 @@ Conversational scene inspection, Python/HOM editing and reference-driven viewpor
 
 ## Shared backend
 
-```mermaid
-flowchart TB
-    subgraph clients["Artist workstation"]
-        H["Hou-lm · Houdini"]
-        A["Ae-lm · After Effects"]
-    end
-    subgraph backend["studio-assistant-backend"]
-        W["Open WebUI · accounts and API"]
-        G["LiteLLM · model routing"]
-        W <--> G
-    end
-    H <--> W
-    A <--> W
-    G <--> L["Local models · Ollama"]
-    G <--> C["Cloud models"]
-```
+![Shared studio infrastructure: Open WebUI, LiteLLM, PostgreSQL and Ollama serve Houdini and After Effects clients, with configured external cloud routes.](docs/diagrams/architecture.svg)
+
+[Agent loop](docs/diagrams/agent-loop.svg) · [Editable whiteboard](docs/diagrams/studio-assistant.excalidraw)
 
 Clients send context, images and tool results through the service. Commands execute locally in Houdini or AE. An existing compatible Open WebUI service works too.
 
